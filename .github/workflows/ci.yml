@@ -1,0 +1,28 @@
+name: CI (placeholder)
+
+# This workflow is a placeholder. There is no build step for Sentinel
+# Monitor (static HTML/CSS/JS, no bundler) so "CI" here means: syntax-check
+# every JS file and run the project's smoke test. Both are currently done
+# ad hoc during development — see docs/developer-guide.md#testing.
+#
+# TODO (tracked for a future phase):
+#   - Add `node --check` over every js/**/*.js file
+#   - Commit a real smoke-test script (not ad hoc) and run it here
+#   - Add HTML validation
+#   - Add a CSS lint pass once the component library stabilizes further
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No CI configured yet
+        run: |
+          echo "CI is not configured yet. See .github/workflows/ci.yml TODOs."
+          echo "This step intentionally succeeds so the workflow badge doesn't lie about failures that aren't real."

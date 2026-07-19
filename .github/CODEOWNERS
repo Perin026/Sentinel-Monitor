@@ -1,0 +1,15 @@
+# CODEOWNERS
+# Replace @your-github-username below with the actual maintainer(s) once
+# this repository has a permanent home. See:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @your-github-username
+
+# Core architecture changes should get an explicit maintainer review.
+/js/core/    @your-github-username
+/js/engine/  @your-github-username
+/js/plugins/ @your-github-username
+
+# Documentation
+/docs/       @your-github-username
+README.md    @your-github-username
