@@ -1,0 +1,122 @@
+/* =====================================================================
+   DESIGN TOKENS
+   Every color, size and timing value in the app is derived from here.
+   Nothing outside this file should hardcode a hex value or a raw px size
+   for anything that could plausibly need to change with the theme.
+   ===================================================================== */
+
+:root{
+
+  /* ---------- Surfaces ---------- */
+  --bg-canvas:      #0a0d12;   /* page background, behind everything */
+  --bg-surface:      #10141c;  /* sidebar, header */
+  --bg-surface-2:    #141a24;  /* cards */
+  --bg-elevated:     #1a2130;  /* popovers, modals, dropdowns */
+  --bg-hover:        #1c2331;
+  --bg-active:       #212a3c;
+
+  /* ---------- Borders ---------- */
+  --border-subtle:   #1c2330;
+  --border-default:  #262f42;
+  --border-strong:   #37425a;
+
+  /* ---------- Text ---------- */
+  --text-primary:    #eaeef6;
+  --text-secondary:  #96a2b8;
+  --text-tertiary:   #5c6880;
+  --text-disabled:   #3c4558;
+  --text-inverse:    #0a0d12;
+
+  /* ---------- Signature accent (brand signal, not semantic status) ---------- */
+  --accent:          #6c8eff;
+  --accent-strong:   #8aa4ff;
+  --accent-dim:      #33406b;
+  --accent-glow:     rgba(108, 142, 255, .35);
+  --accent-wash:     rgba(108, 142, 255, .08);
+
+  /* ---------- Semantic status colors ---------- */
+  --status-ok:        #35d38a;
+  --status-ok-dim:    rgba(53, 211, 138, .14);
+  --status-warn:       #f2ac3c;
+  --status-warn-dim:   rgba(242, 172, 60, .14);
+  --status-critical:    #f2555f;
+  --status-critical-dim:rgba(242, 85, 95, .14);
+  --status-offline:    #5c6880;
+  --status-offline-dim: rgba(92, 104, 128, .14);
+  --status-paused:     #6c8eff;
+  --status-paused-dim: rgba(108, 142, 255, .14);
+  --status-unknown:    #7c869c;
+  --status-unknown-dim:rgba(124, 134, 156, .14);
+
+  /* ---------- Typography ---------- */
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+
+  --text-2xs:  10px;
+  --text-xs:   11px;
+  --text-sm:   12.5px;
+  --text-base: 14px;
+  --text-md:   15px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  28px;
+  --text-3xl:  36px;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+
+  /* ---------- Spacing scale (4px base) ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---------- Radius ---------- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3);
+  --shadow-glow-accent: 0 0 0 1px var(--accent-dim), 0 0 24px -4px var(--accent-glow);
+  --shadow-glow-ok: 0 0 12px -2px rgba(53, 211, 138, .5);
+  --shadow-glow-warn: 0 0 12px -2px rgba(242, 172, 60, .5);
+  --shadow-glow-critical: 0 0 12px -2px rgba(242, 85, 95, .5);
+
+  /* ---------- Motion ---------- */
+  --ease-out:      cubic-bezier(.16,1,.3,1);
+  --ease-in-out:   cubic-bezier(.65,0,.35,1);
+  --duration-fast:  120ms;
+  --duration-base:  200ms;
+  --duration-slow:  360ms;
+
+  /* ---------- Layout ---------- */
+  --header-h:       56px;
+  --sidebar-w:       232px;
+  --sidebar-w-collapsed: 68px;
+  --z-header:  100;
+  --z-sidebar: 90;
+  --z-dropdown: 200;
+  --z-modal:   300;
+  --z-toast:   400;
+}
+
+/* Reduced motion: neutralize durations, keep state changes instant */
+@media (prefers-reduced-motion: reduce){
+  :root{
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

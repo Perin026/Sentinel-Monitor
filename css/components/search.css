@@ -1,0 +1,103 @@
+/* =====================================================================
+   SEARCH — command-palette overlay opened from the header search field.
+   Shares the backdrop language from overlay.css but keeps its own
+   layout since results need a scrollable list, not a footer.
+   ===================================================================== */
+
+.search-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 12, .6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  z-index: var(--z-modal);
+  opacity: 0;
+  animation: overlay-fade var(--duration-base) var(--ease-out) forwards;
+}
+.search-backdrop.is-closing{
+  animation: overlay-fade var(--duration-base) var(--ease-out) reverse forwards;
+}
+
+.search-palette{
+  width: 100%;
+  max-width: 560px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform: translateY(8px);
+  opacity: 0;
+  animation: modal-in var(--duration-slow) var(--ease-out) forwards;
+}
+
+.search-palette-input-row{
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.search-palette-input-row svg{ width: 18px; height: 18px; color: var(--text-tertiary); flex-shrink: 0; }
+.search-palette-input-row input{
+  flex: 1;
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+.search-palette-input-row input::placeholder{ color: var(--text-disabled); }
+.search-palette-input-row kbd{
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-disabled);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.search-results{
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+.search-result-group-label{
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-disabled);
+  padding: var(--space-2) var(--space-3) 4px;
+}
+.search-result{
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-align: left;
+}
+.search-result svg{ width: 16px; height: 16px; color: var(--text-tertiary); flex-shrink: 0; }
+.search-result:hover,
+.search-result.is-active{
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.search-result .result-meta{
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  color: var(--text-disabled);
+  font-family: var(--font-mono);
+}
+
+.search-empty{
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}

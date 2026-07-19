@@ -1,0 +1,89 @@
+/* =====================================================================
+   TOAST — transient notification stack, anchored bottom-right.
+   Produced/managed by js/components/toast.js.
+   ===================================================================== */
+
+.toast-stack{
+  position: fixed;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-2);
+  width: min(360px, calc(100vw - var(--space-6)));
+  pointer-events: none;
+}
+
+.toast{
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  animation: toast-in var(--duration-base) var(--ease-out);
+}
+.toast.is-leaving{
+  animation: toast-out var(--duration-base) var(--ease-out) forwards;
+}
+@keyframes toast-in{
+  from{ opacity: 0; transform: translateX(16px); }
+  to{ opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out{
+  to{ opacity: 0; transform: translateX(16px) scale(.97); }
+}
+
+.toast.ok{ border-left-color: var(--status-ok); }
+.toast.warn{ border-left-color: var(--status-warn); }
+.toast.critical{ border-left-color: var(--status-critical); }
+
+.toast-icon{
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-top: 1px;
+}
+.toast.ok .toast-icon{ color: var(--status-ok); }
+.toast.warn .toast-icon{ color: var(--status-warn); }
+.toast.critical .toast-icon{ color: var(--status-critical); }
+.toast-icon svg{ width: 16px; height: 16px; }
+
+.toast-content{ min-width: 0; flex: 1; }
+.toast-title{
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.toast-message{
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.toast-close{
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+}
+.toast-close svg{ width: 13px; height: 13px; }
+
+.toast-progress{
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  animation: toast-progress linear forwards;
+  animation-duration: var(--toast-duration, 4s);
+}
+.toast{ position: relative; overflow: hidden; }
+@keyframes toast-progress{
+  from{ width: 100%; }
+  to{ width: 0%; }
+}

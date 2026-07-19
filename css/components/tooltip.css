@@ -1,0 +1,29 @@
+/* =====================================================================
+   TOOLTIP — minimal, CSS-only, for icon buttons and truncated labels
+   ===================================================================== */
+
+[data-tooltip]{ position: relative; }
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after{
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  z-index: var(--z-dropdown);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+[data-tooltip-pos="right"]:hover::after{
+  bottom: auto;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}

@@ -1,0 +1,126 @@
+/* =====================================================================
+   OVERLAY — modal / dialog system.
+   Structure (produced by js/components/modal.js):
+
+   .modal-backdrop
+     .modal
+       .modal-header (title + close button)
+       .modal-body
+       .modal-footer (actions)
+   ===================================================================== */
+
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 12, .6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  z-index: var(--z-modal);
+  opacity: 0;
+  animation: overlay-fade var(--duration-base) var(--ease-out) forwards;
+}
+@keyframes overlay-fade{
+  to{ opacity: 1; }
+}
+.modal-backdrop.is-closing{
+  animation: overlay-fade var(--duration-base) var(--ease-out) reverse forwards;
+}
+
+.modal{
+  width: 100%;
+  max-width: var(--modal-width, 480px);
+  max-height: calc(100vh - var(--space-12));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(8px) scale(.98);
+  opacity: 0;
+  animation: modal-in var(--duration-slow) var(--ease-out) forwards;
+}
+@keyframes modal-in{
+  to{ transform: translateY(0) scale(1); opacity: 1; }
+}
+.modal-backdrop.is-closing .modal{
+  animation: modal-in var(--duration-base) var(--ease-out) reverse forwards;
+}
+
+.modal-header{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.modal-title{
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.modal-subtitle{
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+.modal-close{
+  flex-shrink: 0;
+}
+
+.modal-body{
+  padding: var(--space-5);
+  overflow-y: auto;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.modal-footer{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.modal-footer.spread{
+  justify-content: space-between;
+}
+
+/* ---------- Confirmation variant ---------- */
+.modal.confirm{
+  --modal-width: 400px;
+}
+.modal.confirm .modal-body{
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.modal.confirm .confirm-icon{
+  width: 38px; height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--status-warn-dim);
+  color: var(--status-warn);
+}
+.modal.confirm.danger .confirm-icon{
+  background: var(--status-critical-dim);
+  color: var(--status-critical);
+}
+.modal.confirm .confirm-icon svg{ width: 18px; height: 18px; }
+
+@media (max-width: 480px){
+  .modal-backdrop{ padding: var(--space-3); align-items: flex-end; }
+  .modal{ max-width: 100%; }
+}

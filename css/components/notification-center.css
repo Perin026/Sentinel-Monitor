@@ -1,0 +1,117 @@
+/* =====================================================================
+   NOTIFICATION CENTER — panel opened from the header bell icon.
+   Reuses the floating-surface language from menu.css but is wider and
+   has its own scrollable list + footer.
+   ===================================================================== */
+
+.notification-panel{
+  position: fixed;
+  width: 360px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  transform: translateY(-4px) scale(.98);
+  animation: menu-in var(--duration-fast) var(--ease-out) forwards;
+  overflow: hidden;
+}
+
+.notification-panel-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.notification-panel-title{
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.notification-panel-action{
+  font-size: var(--text-xs);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.notification-panel-action:hover{ text-decoration: underline; }
+
+.notification-list{
+  overflow-y: auto;
+  flex: 1;
+}
+.notification-item{
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+.notification-item:last-child{ border-bottom: none; }
+.notification-item:hover{ background: var(--bg-hover); }
+.notification-item.is-unread::before{
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 20px;
+  width: 6px; height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+.notification-item.is-unread{ padding-left: calc(var(--space-4) + 10px); }
+
+.notification-icon{
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--status-ok-dim);
+  color: var(--status-ok);
+}
+.notification-item.warn .notification-icon{ background: var(--status-warn-dim); color: var(--status-warn); }
+.notification-item.critical .notification-icon{ background: var(--status-critical-dim); color: var(--status-critical); }
+.notification-icon svg{ width: 15px; height: 15px; }
+
+.notification-content{ min-width: 0; flex: 1; }
+.notification-title{
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.notification-message{
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.notification-time{
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-disabled);
+  margin-top: 4px;
+}
+
+.notification-panel-footer{
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+  flex-shrink: 0;
+}
+.notification-panel-footer button{
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.notification-panel-footer button:hover{ color: var(--text-primary); }
+
+@media (max-width: 480px){
+  .notification-panel{
+    width: calc(100vw - var(--space-4));
+    right: var(--space-2) !important;
+  }
+}

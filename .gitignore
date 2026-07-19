@@ -1,0 +1,17 @@
+# Dependencies (only ever installed ad hoc for local smoke testing)
+node_modules/
+package-lock.json
+package.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local scratch
+*.local.js
+/scratch/

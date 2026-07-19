@@ -1,0 +1,32 @@
+/* =====================================================================
+   BADGE — status pill
+   ===================================================================== */
+
+.status-badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+.status-badge::before{
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  flex-shrink: 0;
+}
+.status-badge.pulse::before{
+  animation: dot-pulse 2.2s ease-in-out infinite;
+}
+.status-badge.ok{ color: var(--status-ok); background: var(--status-ok-dim); }
+.status-badge.warn{ color: var(--status-warn); background: var(--status-warn-dim); }
+.status-badge.critical{ color: var(--status-critical); background: var(--status-critical-dim); }
+.status-badge.offline{ color: var(--status-offline); background: var(--status-offline-dim); }
+.status-badge.paused{ color: var(--status-paused); background: var(--status-paused-dim); }
+.status-badge.unknown{ color: var(--status-unknown); background: var(--status-unknown-dim); }

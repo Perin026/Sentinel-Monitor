@@ -1,0 +1,121 @@
+/* =====================================================================
+   BASE — reset + global typography
+   ===================================================================== */
+
+*, *::before, *::after{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html{
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body{
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6{
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+button, input, select, textarea{
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+button{
+  cursor: pointer;
+}
+
+a{
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol{
+  list-style: none;
+}
+
+svg{
+  display: block;
+}
+
+/* Baseline for every sprite icon rendered via HLM.icon(); components
+   override width/height locally where a different size is needed. */
+.icon{
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* Numeric / tabular data always uses the mono face with tabular figures */
+.mono, .metric-value, .data-num, time, .tabular{
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+::selection{
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+/* Scrollbars */
+*{
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar{
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track{
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb{
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+*::-webkit-scrollbar-thumb:hover{
+  background: var(--text-tertiary);
+}
+
+/* Visible keyboard focus everywhere, invisible for mouse users */
+:focus{
+  outline: none;
+}
+:focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Utility */
+.visually-hidden{
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

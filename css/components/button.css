@@ -1,0 +1,60 @@
+/* =====================================================================
+   BUTTON — variants used across toolbars, modals and empty states
+   ===================================================================== */
+
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.btn svg{ width: 15px; height: 15px; }
+.btn:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.btn-primary{
+  background: var(--accent);
+  color: #0a0d12;
+}
+.btn-primary:hover:not(:disabled){
+  background: var(--accent-strong);
+  box-shadow: var(--shadow-glow-accent);
+}
+
+.btn-ghost{
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+.btn-ghost:hover:not(:disabled){
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.btn-danger{
+  background: var(--status-critical);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled){
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-glow-critical);
+}
+
+.btn-sm{
+  padding: 5px var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.btn-icon-only{
+  padding: var(--space-2);
+  width: 34px;
+  height: 34px;
+}

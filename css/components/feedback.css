@@ -1,0 +1,94 @@
+/* =====================================================================
+   FEEDBACK — loading, empty and error states.
+   Any widget can drop into one of these three states via widget.js;
+   the visual language stays consistent everywhere it happens.
+   ===================================================================== */
+
+/* ---------- Skeleton (loading placeholder) ---------- */
+.skeleton{
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  animation: skeleton-sweep 1.8s ease-in-out infinite;
+}
+@keyframes skeleton-sweep{
+  100%{ transform: translateX(100%); }
+}
+.skeleton-text{ height: 12px; border-radius: 4px; }
+.skeleton-block{ height: 80px; }
+
+/* ---------- Spinner ---------- */
+.spinner{
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  animation: spinner-spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spinner-spin{ to{ transform: rotate(360deg); } }
+
+/* ---------- Empty / placeholder state ---------- */
+.empty-state{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-16) var(--space-6);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  color: var(--text-tertiary);
+}
+.empty-state.compact{
+  padding: var(--space-8) var(--space-4);
+}
+.empty-state .empty-icon{
+  width: 40px; height: 40px;
+  color: var(--text-disabled);
+}
+.empty-state h3{
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+.empty-state p{
+  font-size: var(--text-sm);
+  max-width: 380px;
+}
+
+/* ---------- Error state ---------- */
+.error-state{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--status-critical-dim);
+  border: 1px solid rgba(242, 85, 95, .2);
+  color: var(--text-secondary);
+}
+.error-state .error-icon{
+  width: 32px; height: 32px;
+  color: var(--status-critical);
+}
+.error-state h3{
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+.error-state p{
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  max-width: 380px;
+}

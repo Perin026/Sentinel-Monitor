@@ -1,0 +1,109 @@
+/* =====================================================================
+   GAUGE — circular radial gauge + linear threshold gauge.
+   Both are pure SVG built by gauge.js; CSS only handles sizing,
+   color-by-status and the fill transition.
+   ===================================================================== */
+
+/* ---------- Circular gauge ---------- */
+.gauge-circular{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--gauge-size, 96px);
+  height: var(--gauge-size, 96px);
+  flex-shrink: 0;
+}
+.gauge-circular svg{
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.gauge-circular .gauge-track{
+  fill: none;
+  stroke: var(--border-default);
+  stroke-width: var(--gauge-stroke, 8);
+}
+.gauge-circular .gauge-value{
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: var(--gauge-stroke, 8);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--duration-slow) var(--ease-out), stroke var(--duration-base) var(--ease-out);
+}
+.gauge-circular.status-ok .gauge-value{ stroke: var(--status-ok); }
+.gauge-circular.status-warn .gauge-value{ stroke: var(--status-warn); }
+.gauge-circular.status-critical .gauge-value{ stroke: var(--status-critical); }
+.gauge-circular.status-offline .gauge-value{ stroke: var(--status-offline); }
+
+.gauge-circular-readout{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  pointer-events: none;
+}
+.gauge-circular-readout .value{
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.gauge-circular-readout .unit{
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+/* size variants */
+.gauge-circular.size-sm{ --gauge-size: 64px; --gauge-stroke: 6; }
+.gauge-circular.size-sm .gauge-circular-readout .value{ font-size: var(--text-sm); }
+.gauge-circular.size-lg{ --gauge-size: 132px; --gauge-stroke: 10; }
+.gauge-circular.size-lg .gauge-circular-readout .value{ font-size: var(--text-2xl); }
+
+/* ---------- Linear threshold gauge ---------- */
+.gauge-linear{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gauge-linear-track{
+  position: relative;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--border-default);
+  overflow: hidden;
+}
+.gauge-linear-fill{
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  transition: width var(--duration-slow) var(--ease-out), background var(--duration-base) var(--ease-out);
+}
+.gauge-linear.status-ok .gauge-linear-fill{ background: var(--status-ok); }
+.gauge-linear.status-warn .gauge-linear-fill{ background: var(--status-warn); }
+.gauge-linear.status-critical .gauge-linear-fill{ background: var(--status-critical); }
+.gauge-linear.status-offline .gauge-linear-fill{ background: var(--status-offline); }
+.gauge-linear-track .gauge-linear-threshold{
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--bg-canvas);
+  opacity: .8;
+}
+.gauge-linear-meta{
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+.gauge-linear-meta .current{
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}

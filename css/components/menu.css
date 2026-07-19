@@ -1,0 +1,68 @@
+/* =====================================================================
+   MENU — floating menu surface shared by dropdown.js and context-menu.js.
+   Both produce the same .menu markup; only how it's positioned/triggered
+   differs between the two components.
+   ===================================================================== */
+
+.menu{
+  position: fixed;
+  min-width: 180px;
+  max-width: 280px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  transform: translateY(-4px) scale(.98);
+  animation: menu-in var(--duration-fast) var(--ease-out) forwards;
+}
+@keyframes menu-in{
+  to{ opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.menu-label{
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-disabled);
+  padding: var(--space-2) var(--space-2) 4px;
+}
+.menu-divider{
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--space-2) 0;
+}
+.menu-item{
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: nowrap;
+}
+.menu-item svg{ width: 15px; height: 15px; flex-shrink: 0; color: var(--text-tertiary); }
+.menu-item:hover:not(:disabled),
+.menu-item.is-active{
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.menu-item:hover:not(:disabled) svg{ color: var(--text-primary); }
+.menu-item:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
+.menu-item.danger{ color: var(--status-critical); }
+.menu-item.danger svg{ color: var(--status-critical); }
+.menu-item.danger:hover{ background: var(--status-critical-dim); }
+.menu-item .menu-item-shortcut{
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-disabled);
+}

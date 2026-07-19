@@ -1,0 +1,150 @@
+/* =====================================================================
+   DEVICE CARD — the primary building block of Infrastructure / Servers /
+   Network / Storage views. Data-driven (see js/components/device-card.js);
+   this file only owns layout and state-driven visuals.
+   ===================================================================== */
+
+.device-card{
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--duration-base) var(--ease-out);
+}
+.device-card:hover{
+  border-color: var(--border-default);
+}
+.device-card.status-critical{
+  border-color: rgba(242, 85, 95, .35);
+}
+
+.device-card-summary{
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.device-card-icon{
+  width: 38px; height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+.device-card-icon svg{ width: 18px; height: 18px; }
+.device-card.status-ok .device-card-icon{ color: var(--status-ok); }
+.device-card.status-warn .device-card-icon{ color: var(--status-warn); }
+.device-card.status-critical .device-card-icon{ color: var(--status-critical); }
+
+.device-card-identity{
+  min-width: 0;
+  flex: 1;
+}
+.device-card-name{
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.device-card-meta{
+  display: flex;
+  gap: var(--space-2);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+.device-card-meta span:not(:last-child)::after{
+  content: "·";
+  margin-left: var(--space-2);
+  color: var(--border-strong);
+}
+
+.device-card-metrics{
+  display: none;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+@media (min-width: 560px){
+  .device-card-metrics{ display: flex; }
+}
+.device-card-metric{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  width: 56px;
+}
+.device-card-metric .metric-label{
+  font-size: var(--text-2xs);
+  color: var(--text-disabled);
+  text-transform: uppercase;
+}
+.device-card-metric .metric-value{
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.device-card-metric .progress-bar{ width: 56px; }
+
+.device-card-chevron{
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.device-card.is-expanded .device-card-chevron{
+  transform: rotate(180deg);
+}
+
+.device-card-detail{
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-base) var(--ease-out);
+  border-top: 1px solid transparent;
+}
+.device-card.is-expanded .device-card-detail{
+  grid-template-rows: 1fr;
+  border-top-color: var(--border-subtle);
+}
+.device-card-detail-inner{
+  overflow: hidden;
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-4);
+}
+.device-card-sensor{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.device-card-sensor .sensor-label{
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.device-card-sensor .sensor-label::before{
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+.device-card-sensor.status-ok .sensor-label{ color: var(--status-ok); }
+.device-card-sensor.status-warn .sensor-label{ color: var(--status-warn); }
+.device-card-sensor.status-critical .sensor-label{ color: var(--status-critical); }
+.device-card-sensor .sensor-value{
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
