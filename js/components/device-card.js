@@ -46,6 +46,33 @@
     return { node, valueEl };
   }
 
+  // ---------------------------------------------------------------
+  // Phase 4 — live-monitoring detail row for sensors with a `monitor`
+  // config (see js/engine/monitoring-scheduler.js). "up"/"down" here are
+  // the sensor's *poll* health, distinct from sensor.status's threshold
+  // health (ok/warn/critical) — a sensor can be "up" and still "warn" if
+  // its real value crossed a threshold. CSS only has ok/warn/critical/
+  // offline/paused/unknown classes (see css/components/badge.css), so
+  // this maps poll health onto that existing palette for color only; the
+  // displayed text stays "up"/"down" verbatim.
+  // ---------------------------------------------------------------
+
+  const MONITOR_CSS_STATUS = { up: "ok", down: "critical", paused: "paused", unknown: "unknown" };
+
+  function fmtMonitor(sensor){
+    const parts = [sensor.monitorStatus || "unknown"];
+    if(sensor.responseTimeMs != null) parts.push(`${sensor.responseTimeMs}ms`);
+    if(sensor.nextCheckAt) parts.push(`next in ${formatDuration(Math.max(0, sensor.nextCheckAt - Date.now()))}`);
+    return parts.join(" · ");
+  }
+
+  function buildMonitorRow(key, sensor){
+    const label = el("span", { class: "sensor-label" }, [`${sensor.def.label} · live check`]);
+    const valueEl = el("span", { class: "sensor-value" }, [fmtMonitor(sensor)]);
+    const node = el("div", { class: `device-card-sensor status-${MONITOR_CSS_STATUS[sensor.monitorStatus] || "unknown"}` }, [label, valueEl]);
+    return { node, valueEl };
+  }
+
   function createDeviceCard(device){
     const typeInfo = HLM.registries.deviceTypes.get(device.type) || { label: device.type || "Device", icon: "server" };
     const refs = { metrics: {}, sensors: {} };
@@ -79,17 +106,26 @@
 
     // ---------- expandable detail ----------
     const detailInner = el("div", { class: "device-card-detail-inner" });
+    refs.monitors = {};
     Object.entries(device.sensors).forEach(([key, sensor]) => {
       const row = buildSensorRow(key, sensor);
       refs.sensors[key] = row;
       detailInner.append(row.node);
+
+      if(sensor.def.monitor){
+        const monitorRow = buildMonitorRow(key, sensor);
+        refs.monitors[key] = monitorRow;
+        detailInner.append(monitorRow.node);
+      }
     });
 
     const uptimeValue = el("span", { class: "sensor-value" }, [formatDuration(Date.now() - device.bootedAt)]);
     const lastCheckValue = el("span", { class: "sensor-value" }, ["just now"]);
+    const sensorCountValue = el("span", { class: "sensor-value" }, [String(Object.keys(device.sensors).length)]);
     detailInner.append(
       el("div", { class: "device-card-sensor status-ok" }, [el("span", { class: "sensor-label" }, ["Uptime"]), uptimeValue]),
       el("div", { class: "device-card-sensor status-ok" }, [el("span", { class: "sensor-label" }, ["Last check"]), lastCheckValue]),
+      el("div", { class: "device-card-sensor status-ok" }, [el("span", { class: "sensor-label" }, ["Sensor count"]), sensorCountValue]),
     );
 
     const detail = el("div", { class: "device-card-detail" }, [detailInner]);
@@ -121,10 +157,17 @@
         if(!row) return;
         row.node.className = `device-card-sensor status-${sensor.status}`;
         row.valueEl.textContent = fmtValue(sensor);
+
+        const monitorRow = refs.monitors[key];
+        if(monitorRow && sensor.def.monitor){
+          monitorRow.node.className = `device-card-sensor status-${MONITOR_CSS_STATUS[sensor.monitorStatus] || "unknown"}`;
+          monitorRow.valueEl.textContent = fmtMonitor(sensor);
+        }
       });
 
       uptimeValue.textContent = nextDevice.maintenance ? "—" : formatDuration(Date.now() - nextDevice.bootedAt);
       lastCheckValue.textContent = `${formatDuration(Date.now() - nextDevice.lastCheck) || "0s"} ago`;
+      sensorCountValue.textContent = String(Object.keys(nextDevice.sensors).length);
     }
 
     return { el: root, update };

@@ -169,13 +169,94 @@ later without breaking every plugin that depends on them — the same reason
 any stable software product publishes an SDK instead of telling extension
 authors to read its source.
 
+## Live Monitoring (Phase 4)
+
+Phase 3's simulation engine invents every value. Phase 4 adds a second,
+parallel source of truth for specific sensors: real polls, running
+independently of the 2.5s simulation tick.
+
+```
+Monitoring Scheduler (js/engine/monitoring-scheduler.js)
+      ↓ calls, per (device, sensor), on its own interval
+Sensor Providers (HLM.registries.sensorProviders — ping/http/system/dummy/minecraft/...)
+      ↓ results overlaid onto the tick snapshot by
+Engine's overlayLiveSensors() — runs *before* health computation
+      ↓ from there, indistinguishable from a simulated sensor to
+Health Engine / Alert Engine / Event Engine / UI (all unchanged)
+```
+
+The key design decision: this is an **overlay**, not a replacement
+data path. `overlayLiveSensors()` runs at the top of `engine.js`'s
+`runPipeline()`, before `computeDeviceHealth()`, and only touches
+`sensor.value` (when a poll succeeded) plus new observability fields
+(`monitorStatus`, `responseTimeMs`, `lastUpdate`, `lastSuccessfulUpdate`,
+`nextCheckAt`, `meta`). A failed *primary* sensor sets
+`device.status = "offline"` on the snapshot — the exact same field the
+simulator's own incident engine already sets, which `computeDeviceHealth`
+already short-circuits on. Net effect: **zero changes to
+`health-engine.js`, `alert-engine.js`, or `event-engine.js`** to support
+real data. A live sensor's value gets thresholded, alerted on, and timed
+into the event log through the identical code path a simulated one uses.
+
+This only works because live monitoring is opt-in at two levels:
+1. **Sensor definition** (device type, from a plugin) — does this sensor
+   have a `monitor` config at all? (`HLM.sdk.defineMonitor()`)
+2. **Device instance** (its `js/core/config.js` seed) — does *this*
+   device have `monitored: true`?
+
+A `minecraft` device type's `players` sensor can carry a real `monitor`
+config while two of the three Minecraft devices in the demo fleet stay
+100% simulated, because only one of them opts in at the instance level.
+Device types are shared; whether an instance points at something real
+is not.
+
+### Sensor Providers vs. Data Providers
+
+Don't confuse this with the existing `DataProvider` abstraction
+(simulation/api/websocket) from Phase 3 — that swaps out the source for
+an *entire device snapshot, every tick, in lockstep*. A `SensorProvider`
+polls *one sensor*, on its own schedule, independently of any tick.
+They coexist: the active `DataProvider` still produces a full snapshot
+every 2.5s (simulated, for now), and the monitoring scheduler's overlay
+punches through just the sensors that opted in. A future phase giving
+`ApiProvider` something real to talk to wouldn't need to touch sensor
+providers at all — the two systems are orthogonal.
+
+### The browser-reality boundary
+
+A browser cannot open a raw ICMP or TCP socket, or read another
+machine's CPU/RAM/disk without something on that machine to ask (see
+"Why no framework?" above — no backend is the whole point). The built-in
+sensor providers (`js/plugins/builtin/core-monitoring.js`) are honest
+about this:
+- `http` is a real, direct check — response code and timing are exactly
+  what they claim to be.
+- `ping` is an HTTP(S)/no-cors reachability + latency probe, used *as* a
+  ping — not real ICMP, but not fake either: `no-cors` mode resolves for
+  any response and rejects only on genuine network failure, so it
+  answers "is this reachable, how long did it take" without requiring
+  CORS support from the target.
+- `system` is structurally complete — same "nothing real to talk to
+  unless you run one" honesty `ApiProvider` already modeled — and
+  expects a local agent serving JSON metrics.
+- `minecraft` (registered by the Minecraft plugin, not core — the core
+  still doesn't know Minecraft exists) is genuinely real: the public
+  `mcsrvstat.us` API speaks the actual Minecraft protocol server-side, so
+  the browser gets real online/player/MOTD/version data over plain HTTPS.
+
 ## Known Limitations (honesty over polish)
 
-- Data is simulated. There is no real Proxmox/Docker/Minecraft/etc.
-  integration behind the example plugins — see `docs/roadmap.md`.
+- Data is simulated by default. There is no real Proxmox/Docker/Ollama/
+  Home Assistant/Pi-hole integration behind those example plugins yet —
+  see `docs/roadmap.md`. Minecraft and generic HTTP/reachability checks
+  are real as of Phase 4, but only for device instances explicitly
+  marked `monitored: true`.
+- CPU/RAM/disk are never real for any device — that needs a local agent,
+  which the `system` sensor provider is ready for but nothing ships yet.
 - There is no backend. `ApiProvider`/`WebSocketProvider` are structurally
   complete but have nothing real to talk to yet (Phase 5).
 - There is no persistence beyond `localStorage` for plugin-scoped settings.
-  Refreshing the page resets the simulated fleet's history buffers.
+  Refreshing the page resets the simulated fleet's history buffers (and
+  the live monitoring scheduler's in-memory state).
 - There is no authentication. Anyone who can open the page can see and
   interact with everything (Phase 9).

@@ -11,7 +11,7 @@
   const APP = {
     name: "Sentinel Monitor",
     shortName: "Sentinel",
-    version: "0.4.0-alpha",
+    version: "0.5.0-alpha",
     refreshMs: 2500,
     historyPoints: 120,
     dataUrl: null,          // set to an /api/dashboard endpoint to enable ApiProvider
@@ -69,6 +69,15 @@
     { id: "hass-01",      name: "home-assistant", type: "homeassistant", hostname: "hass.lan",           ip: "10.0.1.60" },
     { id: "n8n-01",       name: "n8n",            type: "n8n",           hostname: "n8n.lan",            ip: "10.0.1.61" },
     { id: "immich-01",    name: "immich",         type: "immich",        hostname: "docker-host-01.lan", ip: "10.0.1.21" },
+
+    // Phase 4 — genuinely live-monitored, not simulated. `monitored: true`
+    // opts a device *instance* into real polling (see
+    // js/engine/monitoring-scheduler.js); the sensor's own `monitor` config
+    // (set on the device *type*, in the plugin that registered it) decides
+    // how. Public, always-on targets on purpose, so this is real and
+    // reproducible out of the box without any of the user's own infra.
+    { id: "mc-public-demo", name: "Hypixel Network (public demo)",  type: "minecraft",     hostname: "mc.hypixel.net",       ip: "", monitored: true },
+    { id: "http-demo",      name: "GitHub Status (public demo)",    type: "http-endpoint", hostname: "www.githubstatus.com", ip: "", monitored: true },
   ];
 
   const SERVICES = [];

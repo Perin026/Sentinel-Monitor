@@ -15,6 +15,61 @@ Nothing yet.
 
 ---
 
+## [0.5.0-alpha] — Phase 4: Real Monitoring Engine
+
+A second, real data path alongside the Phase 3 simulator. Every device
+remains simulated by default; two demo devices are now genuinely
+live-polled, proving the mechanism end-to-end without touching any of the
+existing fleet's behavior.
+
+### Added
+- Sensor Provider registry (`HLM.registries.sensorProviders`) and SDK
+  support (`ctx.registerSensorProvider()`, `HLM.sdk.defineMonitor()`),
+  following the same pattern as every other registry in the app
+- Four built-in sensor providers (`js/plugins/builtin/core-monitoring.js`):
+  `ping` (HTTP/no-cors reachability + latency + rough packet loss),
+  `http` (real response code/time), `system` (structurally-complete
+  local-agent poller), `dummy` (synthetic, for scheduler testing)
+- A real `minecraft` sensor provider, registered by the existing
+  Minecraft plugin itself, using the public `mcsrvstat.us` API for
+  genuine online/player-count/MOTD/version data
+- A generic `http-endpoint` device type for monitoring arbitrary HTTP
+  services
+- Monitoring Scheduler (`js/engine/monitoring-scheduler.js`): one
+  independently-rescheduling poll chain per (device, sensor), concurrency
+  capped, retry-with-backoff before marking a sensor down,
+  maintenance-aware pausing, failure logging
+- History Engine (`js/engine/history-engine.js`): timestamped `{t,v}`
+  rolling buffers, replacing the raw-number history arrays, shared by
+  simulated and live sensors alike
+- Two demo devices, `monitored: true` in `js/core/config.js`: a public
+  Minecraft server (Hypixel) and a public HTTP/reachability check
+  (GitHub's status page + Cloudflare's `1.1.1.1`)
+- Device cards show live-monitored sensors' poll status, response time,
+  and next-check countdown, plus a sensor-count row for every device
+- Settings gained a "Live Monitoring" panel listing every polled sensor
+  fleet-wide
+
+### Changed
+- `engine.js`'s tick pipeline gained an `overlayLiveSensors()` step,
+  running before health computation — real values flow through the exact
+  same thresholding a simulated sensor uses, with zero changes to
+  `health-engine.js`, `alert-engine.js`, or `event-engine.js`
+- `minecraft-plugin.js`'s `players` sensor definition gained a `monitor`
+  config; unaffected for the two demo-fleet Minecraft devices that don't
+  have `monitored: true`, since that's a per-device-instance opt-in
+
+### Notes
+- The Alerts Foundation this phase's brief asked for (alert objects,
+  severity, acknowledged flag, timestamp, resolved state) was audited
+  against Phase 3's `alert-engine.js` and found already complete — no new
+  code was written there.
+- This phase reorders the roadmap: what was originally planned as
+  "Phase 4" (charts/topology/visualization) is now Phase 4.5. See
+  `PROJECT_STATE.md` for the full reasoning.
+
+---
+
 ## [0.4.0-alpha] — Phase 3.5: Plugin Architecture
 
 The monitoring engine from Phase 3 is now built on top of a full plugin
@@ -129,7 +184,8 @@ specific service.**
   Mono)
 - Config-driven navigation structure
 
-[Unreleased]: https://github.com/your-org/sentinel-monitor/compare/v0.4.0-alpha...HEAD
+[Unreleased]: https://github.com/your-org/sentinel-monitor/compare/v0.5.0-alpha...HEAD
+[0.5.0-alpha]: https://github.com/your-org/sentinel-monitor/releases/tag/v0.5.0-alpha
 [0.4.0-alpha]: https://github.com/your-org/sentinel-monitor/releases/tag/v0.4.0-alpha
 [0.3.0]: https://github.com/your-org/sentinel-monitor/releases/tag/v0.3.0
 [0.2.0]: https://github.com/your-org/sentinel-monitor/releases/tag/v0.2.0

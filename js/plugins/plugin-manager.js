@@ -38,6 +38,7 @@
       registerWidget: bind("widgets"),
       registerPage: bind("pages"),
       registerProvider: bind("dataProviders"),
+      registerSensorProvider: bind("sensorProviders"),
       registerCommand: bind("commands"),
       registerNotificationProvider: bind("notificationProviders"),
       registerSettingsPanel: bind("settingsPanels"),

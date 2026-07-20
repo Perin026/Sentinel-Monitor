@@ -12,6 +12,7 @@
     pages:                   HLM.createRegistry("pages"),                // nav pages/routes
     commands:                 HLM.createRegistry("commands"),
     dataProviders:              HLM.createRegistry("dataProviders"),      // Step 6
+    sensorProviders:              HLM.createRegistry("sensorProviders"),    // Phase 4: per-sensor poll strategies (ping, http, ...)
     notificationProviders:        HLM.createRegistry("notificationProviders"),
     settingsPanels:                 HLM.createRegistry("settingsPanels"),
     actions:                          HLM.createRegistry("actions"),        // toolbar/FAB/context-menu actions

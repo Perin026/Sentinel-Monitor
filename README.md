@@ -4,7 +4,7 @@
 
 **A modern, extensible, plugin-based monitoring platform for homelabs, self-hosted infrastructure, and small enterprise environments.**
 
-[![Version](https://img.shields.io/badge/version-0.4.0--alpha-blue)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0--alpha-blue)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha-orange)](#project-status)
 [![Build](https://img.shields.io/badge/build-not_configured-lightgrey)](.github/workflows)
@@ -34,23 +34,24 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 
 ## Project Status
 
-> **Alpha.** The UI framework, monitoring engine, and plugin architecture are complete and tested. Data is currently **simulated** — there is no live backend or real service integration yet. See the [Roadmap](#roadmap) for what's next.
+> **Alpha.** The UI framework, monitoring engine, plugin architecture, and a real (opt-in) live-monitoring path are complete and tested. Most of the demo fleet is still **simulated** — two devices are genuinely polled over the network to prove the mechanism end-to-end. See the [Roadmap](#roadmap) for what's next.
 
 ## Features
 
-**Today (v0.4.0-alpha):**
+**Today (v0.5.0-alpha):**
 - NOC-style dashboard: overview, per-category device views, live event log, settings
 - Realistic simulated telemetry — trends, spikes, incidents, and automatic recovery, not just random noise
 - Full health/alert/event engine: weighted device health, alert lifecycle (create → escalate → resolve), live event stream
-- Plugin architecture: device types, widgets, commands, data providers, notification providers, settings panels, and background tasks are all pluggable
-- Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface
+- **Real, opt-in live monitoring**: a Sensor Provider registry, a per-sensor Monitoring Scheduler (independent intervals, retries, backoff), and timestamped history — see two devices polling real infrastructure right now (a public Minecraft server and a public HTTP/reachability check) in Settings → Live Monitoring
+- Plugin architecture: device types, widgets, commands, data providers, sensor providers, notification providers, settings panels, and background tasks are all pluggable
+- Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface — Minecraft's player-count/MOTD/version check is genuinely real, the rest remain architectural demonstrations
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
 - Zero build step — open `index.html` and it runs
 
 **Not yet implemented** (see [Roadmap](#roadmap)):
-- Charts, topology maps, and historical graphs (Phase 4)
-- A real backend / API (Phase 5)
-- Actual third-party integrations (Phase 6) — today's plugins are architectural demonstrations, not working integrations
+- Charts, topology maps, and historical graphs (Phase 4.5)
+- A real backend / API, and a reference agent for CPU/RAM/disk metrics (Phase 5)
+- Full third-party integrations for the other five example plugins (Phase 6) — RCON-level Minecraft control, real Proxmox/Docker/Ollama/Home Assistant/Pi-hole APIs
 - Authentication, multi-user support, notification delivery (Discord/ntfy/email)
 
 ## Architecture Overview
@@ -113,7 +114,7 @@ sentinel-monitor/
 │   ├── plugins/                      Plugin Manager, registries, SDK, services
 │   │   ├── builtin/                   Ships-by-default plugins (core device types, core widgets)
 │   │   └── examples/                   Demonstration plugins (Proxmox, Docker, Minecraft, ...)
-│   ├── engine/                        Health/alert/event engines, simulation, data providers
+│   ├── engine/                        Health/alert/event engines, simulation, data providers, live-monitoring scheduler
 │   ├── components/                     Reusable UI component library
 │   └── app.js                           Bootstraps everything
 ├── docs/                          Architecture, plugin dev guide, roadmap, standards
@@ -160,7 +161,8 @@ Plugins can register device types, widgets, pages, commands, data providers, not
 | 2 | UI Framework | ✅ Complete |
 | 3 | Monitoring Engine | ✅ Complete |
 | 3.5 | Plugin Architecture | ✅ Complete |
-| 4 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
+| 4 | Real Monitoring Engine (sensor providers, scheduler, live polling) | ✅ Complete |
+| 4.5 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
 | 5 | FastAPI Backend | ⏳ Planned |
 | 6 | Official Plugins (Proxmox, Docker, Ollama, Minecraft, Home Assistant, Pi-hole, OPNsense) | ⏳ Planned |
 | 7 | Historical Analytics | ⏳ Planned |
@@ -172,7 +174,7 @@ Full detail, scope, and rationale for each phase: [`docs/roadmap.md`](docs/roadm
 
 ## Screenshots
 
-> _Screenshots will be added once the visualization framework (Phase 4) lands. For now, clone the repo and open `index.html` — it's more informative than a static image._
+> _Screenshots will be added once the visualization framework (Phase 4.5) lands. For now, clone the repo and open `index.html` — it's more informative than a static image._
 
 ## Contributing
 

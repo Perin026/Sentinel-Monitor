@@ -51,6 +51,53 @@ Once registered, your device type is available to the fleet config
 alert engine, device cards, and Overview aggregates all pick it up with no
 further code.
 
+## Making a Sensor Real (Phase 4)
+
+By default a sensor's value comes from the simulation engine. To make one
+genuinely polled, add a `monitor` config:
+
+```javascript
+HLM.sdk.defineSensor({
+  key: "responseTime", label: "HTTP Response", unit: "ms", warn: 800, critical: 1500,
+  monitor: HLM.sdk.defineMonitor({ provider: "http", intervalMs: 30000, path: "/health" }),
+})
+```
+
+This alone isn't enough — `monitor` lives on the device *type*, shared by
+every device of that type. The *device instance* (its entry in
+`js/core/config.js`'s `DEVICES` array) also needs `monitored: true`, or
+the scheduler skips it entirely. This two-level opt-in is what lets a
+shared device type carry a real `monitor` config while most instances of
+it stay simulated — see `CLAUDE_CONTEXT.md` for the reasoning.
+
+`provider` must name something registered via `ctx.registerSensorProvider()`
+(see below) — `ping`, `http`, `system`, and `dummy` ship built-in
+(`js/plugins/builtin/core-monitoring.js`); `minecraft` is a real example
+of a *plugin* registering its own. `primary: true` (the default) means a
+failed poll on this sensor takes the whole device offline, mirroring how
+the simulator's own incident engine already works.
+
+### Registering a Sensor Provider
+
+```javascript
+ctx.registerSensorProvider("my-service", {
+  async poll(seed, sensorDef){
+    // seed: this device's config.js entry — { id, name, type, hostname, ip, ... }
+    // sensorDef: the full sensor definition, including sensorDef.monitor
+    const res = await fetch(`https://${seed.hostname}/status`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`); // throw = failed poll, scheduler retries
+    const data = await res.json();
+    return { value: data.responseTimeMs, meta: { raw: data } }; // meta is optional, freeform
+  },
+});
+```
+
+`poll()` must reject/throw on failure — that's what tells the scheduler
+to retry (up to `monitor.retries`) and eventually mark the sensor `down`.
+A browser can't open raw sockets, so be honest about what you're actually
+measuring — see `docs/architecture.md`'s "The browser-reality boundary"
+for how the built-in providers handle this.
+
 ## Registering a Widget
 
 ```javascript
@@ -112,6 +159,7 @@ ctx.registerSettingsPanel("my-service", {
 | `ctx.registerWidget(id, factory)` | Widget Registry |
 | `ctx.registerPage(id, def)` | Page Registry (adds a nav item + view) |
 | `ctx.registerProvider(id, ProviderClass)` | Data Provider Registry |
+| `ctx.registerSensorProvider(id, { poll(seed, sensorDef) })` | Sensor Provider Registry (Phase 4 — per-sensor live polling) |
 | `ctx.registerCommand(id, def)` | Command Registry (command palette) |
 | `ctx.registerNotificationProvider(id, provider)` | Notification Provider Registry |
 | `ctx.registerSettingsPanel(id, panel)` | Settings Panel Registry |

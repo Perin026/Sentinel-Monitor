@@ -361,8 +361,56 @@
     ]));
 
     grid.append(source.el, refresh.el, fleet.el);
+    mountMonitoringPanel(grid);
     mountPluginsPanel(grid);
     mountPluginSettingsPanels(grid);
+  }
+
+  // ---------------------------------------------------------------
+  // Phase 4 — Live Monitoring panel: one row per real polled sensor
+  // (js/engine/monitoring-scheduler.js), independent of the store's
+  // tick cadence since polls happen on their own schedule. Ticks the
+  // relative "next check" text on the same rAF-free interval the header
+  // clock uses, so times don't visibly go stale between polls.
+  // ---------------------------------------------------------------
+
+  const MONITOR_STATUS_BADGE = { up: "ok", down: "critical", paused: "paused", unknown: "unknown" };
+
+  function monitoringRow(record){
+    const device = HLM.store.get().devices[record.deviceId];
+    const deviceName = device?.name || record.deviceId;
+    const sensorLabel = device?.sensors?.[record.sensorKey]?.def?.label || record.sensorKey;
+    const lastUpdateText = record.lastUpdate ? `${formatDuration(Date.now() - record.lastUpdate)} ago` : "never";
+    const nextCheckText = record.nextCheckAt ? `next in ${formatDuration(Math.max(0, record.nextCheckAt - Date.now()))}` : "—";
+    const responseText = record.responseTimeMs != null ? `${record.responseTimeMs}ms` : "—";
+
+    return el("div", { class: "device-card-sensor", style: "grid-column:span 1;" }, [
+      el("span", { class: "sensor-label" }, [
+        el("span", { class: `status-badge ${MONITOR_STATUS_BADGE[record.monitorStatus] || "unknown"}`, style: "margin-right:8px;" }, [record.monitorStatus]),
+        `${deviceName} · ${sensorLabel} (${record.provider})`,
+      ]),
+      el("span", { class: "sensor-value" }, [`${responseText} · ${lastUpdateText} · ${nextCheckText}`]),
+    ]);
+  }
+
+  function mountMonitoringPanel(grid){
+    // Checked against static config, not the scheduler's live state: this mounts
+    // before HLM.engine.start() (and so before monitoringScheduler.start()) runs,
+    // same as every other view here — it renders once engine ticks arrive.
+    if(!HLM.config.DEVICES.some(d => d.monitored)) return; // nothing configured for live polling
+
+    const widget = HLM.ui.createWidget({ title: "Live Monitoring", subtitle: "Sensors polled for real, via js/engine/monitoring-scheduler.js", icon: "workflow", collapsible: false });
+    widget.el.classList.add("span-12");
+    const body = el("div", { class: "device-card-detail-inner", style: "padding:0; grid-template-columns:1fr;" });
+    widget.setContent(body);
+    grid.append(widget.el);
+
+    function render(){
+      body.innerHTML = "";
+      HLM.monitoringScheduler.getAll().forEach(record => body.append(monitoringRow(record)));
+    }
+    render();
+    HLM.store.subscribe(render, s => s.lastTick);
   }
 
   const PLUGIN_STATUS_BADGE = { enabled: "ok", disabled: "unknown", failed: "critical", incompatible: "warn", "missing-dependency": "warn" };

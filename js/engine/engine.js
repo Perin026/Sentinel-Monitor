@@ -10,20 +10,55 @@
   let consecutiveReconnects = 0;
   const FALLBACK_THRESHOLD = 3;
 
+  /**
+   * Phase 4 — overlays real polled values (js/engine/monitoring-scheduler.js)
+   * onto this tick's snapshot for any device instance marked `monitored: true`.
+   * Runs before health computation, so it needs zero changes to health-engine.js:
+   * a monitored sensor's real value flows through the exact same
+   * computeSensorStatus() thresholding an ordinary simulated sensor uses, and a
+   * failed *primary* sensor sets device.status = "offline", which
+   * computeDeviceHealth() already short-circuits on — the same mechanism the
+   * simulator's own incident engine relies on.
+   */
+  function overlayLiveSensors(devices){
+    Object.values(devices).forEach(device => {
+      if(!HLM.monitoringScheduler.isMonitored(device.id)) return;
+
+      let anyPrimaryDown = false;
+      Object.entries(device.sensors).forEach(([key, sensor]) => {
+        const monitor = sensor.def.monitor;
+        if(!monitor) return;
+
+        const live = HLM.monitoringScheduler.getSensorState(device.id, key);
+        if(!live){ sensor.monitorStatus = "unknown"; return; }
+
+        sensor.monitorStatus = live.monitorStatus;
+        sensor.responseTimeMs = live.responseTimeMs;
+        sensor.lastUpdate = live.lastUpdate;
+        sensor.lastSuccessfulUpdate = live.lastSuccessfulUpdate;
+        sensor.nextCheckAt = live.nextCheckAt;
+        sensor.meta = live.meta;
+        if(live.monitorStatus === "up") sensor.value = live.value;
+        if(live.monitorStatus === "down" && monitor.primary) anyPrimaryDown = true;
+      });
+
+      if(!device.maintenance) device.status = anyPrimaryDown ? "offline" : "ok";
+    });
+  }
+
   function runPipeline(snapshot){
     const prevDevices = HLM.store.get().devices;
     const prevIncidentById = new Map(Object.values(prevDevices).map(d => [d.id, !!d.incident]));
 
     const devices = snapshot.devices;
+    overlayLiveSensors(devices);
     Object.values(devices).forEach(device => {
       device.health = HLM.healthEngine.computeDeviceHealth(device);
 
       const prevSensors = prevDevices[device.id]?.sensors || {};
       Object.entries(device.sensors).forEach(([key, sensor]) => {
         const prevHistory = prevSensors[key]?.history || [];
-        const history = prevHistory.slice(-(HLM.config.APP.historyPoints - 1));
-        history.push(sensor.value);
-        sensor.history = history;
+        sensor.history = HLM.historyEngine.pushSample(prevHistory, sensor.value, HLM.config.APP.historyPoints);
       });
     });
 
@@ -84,6 +119,7 @@
 
   function start(){
     switchProvider(HLM.config.APP.dataProvider);
+    HLM.monitoringScheduler.start(); // independent of which DataProvider is active — see overlayLiveSensors()
   }
 
   function refresh(){
