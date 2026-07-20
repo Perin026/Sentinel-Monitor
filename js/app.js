@@ -87,14 +87,16 @@
     HLM.ui.initFab([
       { label: "Search", icon: "search", onClick: () => HLM.ui.openSearch() },
       { label: "Refresh now", icon: "refresh", onClick: () => HLM.engine.refresh() },
-      { label: "Add device", icon: "plus", onClick: () => HLM.ui.openModal({
-          title: "Add a device",
-          subtitle: "Configuration UI arrives with the backend integration",
-          body: el("p", {}, ["For now, devices are added by editing the fleet list in js/core/config.js — every device type already registered in DEVICE_TYPES picks up sensors, thresholds and rendering automatically."]),
-          footer: el("div", { style: "display:flex;justify-content:flex-end;" }, [
-            el("button", { class: "btn btn-primary", onclick: () => {} }, ["Got it"]),
-          ]),
-        })
+      { label: "Add device", icon: "plus", onClick: () => {
+          const modal = HLM.ui.openModal({
+            title: "Add a device",
+            subtitle: "Configuration UI arrives with the backend integration",
+            body: el("p", {}, ["For now, devices are added by editing the fleet list in js/core/config.js — every device type already registered in DEVICE_TYPES picks up sensors, thresholds and rendering automatically."]),
+            footer: el("div", { style: "display:flex;justify-content:flex-end;" }, [
+              el("button", { class: "btn btn-primary", onclick: () => modal.close() }, ["Got it"]),
+            ]),
+          });
+        },
       },
     ]);
   }
@@ -168,7 +170,7 @@
     const cpuGauge = HLM.ui.createCircularGauge({ value: 0, unit: "%", warn: cpuDef.warn, critical: cpuDef.critical, size: "lg" });
     cpu.setContent(cpuGauge.el);
 
-    const mem = HLM.ui.createWidget({ title: "Avg. Memory", subtitle: "across compute devices", icon: "cpu", status: "ok" });
+    const mem = HLM.ui.createWidget({ title: "Avg. Memory", subtitle: "across compute devices", icon: "memory", status: "ok" });
     mem.el.classList.add("span-3");
     const memGauge = HLM.ui.createCircularGauge({ value: 0, unit: "%", warn: ramDef.warn, critical: ramDef.critical, size: "lg" });
     mem.setContent(memGauge.el);
@@ -231,26 +233,31 @@
   // ---------------------------------------------------------------
 
   function mountDeviceGroupView(viewId, grid){
+    // `grid` is the .widget-grid already in index.html (repeat(12,1fr) by
+    // default). Reconfigure it directly to a single full-width column instead
+    // of nesting a second .widget-grid inside it — nesting left the inner
+    // list as an unspanned grid *item* of the outer 12-column grid, collapsing
+    // every device card to one twelfth of the page width.
     const cardsById = new Map();
-    const listEl = el("div", { class: "widget-grid", style: "grid-template-columns:1fr; gap:12px;" });
-    grid.append(listEl);
+    grid.style.gridTemplateColumns = "1fr";
+    grid.style.gap = "12px";
 
     function render(s){
       const devices = Object.values(s.devices).filter(d => d.group === viewId).sort((a, b) => a.name.localeCompare(b.name));
       if(!devices.length){
-        if(!cardsById.size && !listEl.querySelector(".empty-state")){
-          listEl.append(el("div", { class: "empty-state compact" }, [el("h3", {}, ["No devices in this group yet"])]));
+        if(!cardsById.size && !grid.querySelector(".empty-state")){
+          grid.append(el("div", { class: "empty-state compact" }, [el("h3", {}, ["No devices in this group yet"])]));
         }
         return;
       }
-      listEl.querySelector(".empty-state")?.remove();
+      grid.querySelector(".empty-state")?.remove();
 
       devices.forEach(device => {
         let card = cardsById.get(device.id);
         if(!card){
           card = HLM.ui.createDeviceCard(device);
           cardsById.set(device.id, card);
-          listEl.append(card.el);
+          grid.append(card.el);
         } else {
           card.update(device);
         }

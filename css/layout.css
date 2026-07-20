@@ -27,6 +27,7 @@
   gap: var(--space-4);
   padding: 0 var(--space-5);
   height: var(--header-h);
+  min-width: 0;
   background: rgba(16, 20, 28, .82);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-subtle);
@@ -51,6 +52,11 @@
   grid-area: main;
   padding: var(--space-6);
   min-width: 0;
+  /* Caps line/card widths on ultrawide monitors (2560px+) so widgets don't
+     stretch into mostly-empty cards — unaffected at the design resolution
+     (~1920px), where content is already narrower than this. */
+  max-width: 1700px;
+  margin-inline: auto;
 }
 
 .view{
@@ -125,6 +131,18 @@
   .app-shell{
     grid-template-columns: var(--sidebar-w-collapsed) 1fr;
   }
+  /* The clock/uptime stats are the least essential header content — drop them
+     first so the search box and health pill (which can already run to ~25
+     characters, e.g. "3 devices need attention") always have room, instead
+     of forcing the header — and with it the whole page — wider than the
+     viewport. Specificity bumped via the `.app-header` ancestor: header.css
+     loads after layout.css and sets `.header-stat{ display:flex }`
+     unconditionally, so an equal-specificity override here would lose the
+     cascade tie regardless of this media query (see `.header-search` below,
+     which needs the same treatment for the same reason). */
+  .app-header .header-stat{
+    display: none;
+  }
   .app-shell .app-sidebar .nav-label,
   .app-shell .sidebar-brand .brand-name,
   .app-shell .sidebar-footer{
@@ -148,9 +166,15 @@
     transition: transform var(--duration-base) var(--ease-out);
     box-shadow: var(--shadow-lg);
   }
-  .app-sidebar .nav-label,
-  .app-sidebar .brand-name,
-  .app-sidebar .sidebar-footer{
+  /* Selector paths (and specificity) deliberately mirror the 900px block's
+     hide rule above — that rule also matches every viewport ≤640px (900px
+     encompasses it), so an equal-or-lower-specificity override here would
+     lose the tie on specificity alone regardless of appearing later in the
+     file. Matching specificity lets source order correctly decide the
+     winner instead. */
+  .app-shell .app-sidebar .nav-label,
+  .app-shell .sidebar-brand .brand-name,
+  .app-shell .sidebar-footer{
     display: flex;
   }
   .app-shell.is-nav-open .app-sidebar{
@@ -165,7 +189,11 @@
   .widget-grid .span-6{
     grid-column: span 12;
   }
-  .header-search{
+  /* `.app-header` ancestor bumps specificity above header.css's unconditional
+     `.header-search{ display:flex }` — see the `.header-stat` comment above
+     for why a bare `.header-search{ display:none }` here previously lost
+     the cascade tie and never actually hid the search box on narrow screens. */
+  .app-header .header-search{
     display: none;
   }
 }

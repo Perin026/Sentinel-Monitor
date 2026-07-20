@@ -5,7 +5,7 @@
    .widget
      .widget-header
        .widget-heading  (icon + title/subtitle)
-       .widget-status   (optional status badge)
+       .status-badge    (optional status badge, sibling of .widget-heading)
        .widget-actions  (refresh / collapse / menu buttons)
      .widget-body        (renderer-owned content, or a feedback state)
 
@@ -108,18 +108,15 @@
 
 .widget-body{
   padding: 0 var(--space-4) var(--space-4);
-  min-height: 0;
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows var(--duration-base) var(--ease-out);
+  overflow: hidden;
+  max-height: 480px;
+  transition: max-height var(--duration-base) var(--ease-out), padding var(--duration-base) var(--ease-out);
 }
 .widget-body > *{
   overflow: hidden;
 }
 .widget.is-collapsed .widget-body{
-  grid-template-rows: 0fr;
-}
-.widget.is-collapsed .widget-body{
+  max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
 }

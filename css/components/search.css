@@ -65,13 +65,6 @@
   overflow-y: auto;
   padding: var(--space-2);
 }
-.search-result-group-label{
-  font-size: var(--text-2xs);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--text-disabled);
-  padding: var(--space-2) var(--space-3) 4px;
-}
 .search-result{
   display: flex;
   align-items: center;

@@ -39,8 +39,9 @@
 
   function close(){
     if(!backdrop) return;
-    backdrop.classList.add("is-closing");
-    setTimeout(() => backdrop?.remove(), 150);
+    const node = backdrop;
+    node.classList.add("is-closing");
+    setTimeout(() => node.remove(), 150);
     backdrop = null;
   }
 

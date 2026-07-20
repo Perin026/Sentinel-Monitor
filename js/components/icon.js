@@ -9,7 +9,7 @@
 
   // Keep in sync with the <symbol id="icon-*"> sprite in index.html.
   const REGISTRY = new Set([
-    "grid","topology","server","network","storage","docker","cpu","cube","logs","settings",
+    "grid","topology","server","network","storage","docker","cpu","memory","cube","logs","settings",
     "search","bell","menu","chevron-left","chevron-right","chevron-down","chevron-up",
     "refresh","wifi","battery","image","shield","home","workflow",
     "close","check","alert-triangle","alert-circle","info","more-horizontal",
