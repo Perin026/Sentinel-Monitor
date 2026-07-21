@@ -4,7 +4,7 @@
 
 **A modern, extensible, plugin-based monitoring platform for homelabs, self-hosted infrastructure, and small enterprise environments.**
 
-[![Version](https://img.shields.io/badge/version-0.5.0--alpha-blue)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.0--alpha-blue)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Status](https://img.shields.io/badge/status-alpha-orange)](#project-status)
 [![Build](https://img.shields.io/badge/build-not_configured-lightgrey)](.github/workflows)
@@ -26,7 +26,7 @@
 
 Sentinel Monitor is a Network-Operations-Center-style dashboard for people who run real infrastructure at home or in a small office: Proxmox hosts, Docker stacks, NAS boxes, network gear, UPSes, self-hosted AI tooling, game servers, and everything in between.
 
-It's built to feel like commercial monitoring software — Grafana, Netdata, Uptime Kuma, PRTG — while staying honest about what it currently is: **an alpha-stage frontend and simulation engine with a production-grade plugin architecture**, not yet a finished product with real integrations or a backend.
+It's built to feel like commercial monitoring software — Grafana, Netdata, Uptime Kuma, PRTG — while staying honest about what it currently is: **an alpha-stage frontend and simulation engine, with a production-grade plugin architecture on both sides and a backend foundation that isn't wired to it yet**, not yet a finished product with real integrations.
 
 ### Vision
 
@@ -34,11 +34,11 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 
 ## Project Status
 
-> **Alpha.** The UI framework, monitoring engine, plugin architecture, and a real (opt-in) live-monitoring path are complete and tested. Most of the demo fleet is still **simulated** — two devices are genuinely polled over the network to prove the mechanism end-to-end. See the [Roadmap](#roadmap) for what's next.
+> **Alpha.** The UI framework, monitoring engine, plugin architecture, and a real (opt-in) live-monitoring path are complete and tested — as is a backend foundation (Sentinel Core Server) that isn't wired to the frontend yet. Most of the demo fleet is still **simulated** — two devices are genuinely polled over the network to prove the mechanism end-to-end. See the [Roadmap](#roadmap) for what's next.
 
 ## Features
 
-**Today (v0.5.0-alpha):**
+**Today (v0.6.0-alpha):**
 - NOC-style dashboard: overview, per-category device views, live event log, settings
 - Realistic simulated telemetry — trends, spikes, incidents, and automatic recovery, not just random noise
 - Full health/alert/event engine: weighted device health, alert lifecycle (create → escalate → resolve), live event stream
@@ -47,10 +47,11 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 - Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface — Minecraft's player-count/MOTD/version check is genuinely real, the rest remain architectural demonstrations
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
 - Zero build step — open `index.html` and it runs
+- **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. Runs standalone, verified working end-to-end; not yet wired to the frontend. See [`backend/README.md`](backend/README.md)
 
 **Not yet implemented** (see [Roadmap](#roadmap)):
-- Charts, topology maps, and historical graphs (Phase 4.5)
-- A real backend / API, and a reference agent for CPU/RAM/disk metrics (Phase 5)
+- Charts, topology maps, and historical graphs (Phase 4.6)
+- Wiring the frontend's `ApiProvider`/`WebSocketProvider` to the new backend, and real collectors/authentication/history behind it (Phase 5.2+)
 - Full third-party integrations for the other five example plugins (Phase 6) — RCON-level Minecraft control, real Proxmox/Docker/Ollama/Home Assistant/Pi-hole APIs
 - Authentication, multi-user support, notification delivery (Discord/ntfy/email)
 
@@ -94,11 +95,14 @@ python3 -m http.server 8080
 
 Everything else — device fleet, simulation, plugins — boots automatically. There is nothing to configure to see it running.
 
+The backend (below) is entirely optional and separate — the frontend doesn't need it and doesn't currently talk to it.
+
 ### Requirements
 
 - Any modern browser (Chrome, Firefox, Safari, Edge)
 - No Node.js, no package manager, no build tooling required to *run* the app
 - Node.js is only used for the project's own smoke tests during development (see [`docs/developer-guide.md`](docs/developer-guide.md))
+- Python 3.12+ only if you're also running the backend (see [`backend/README.md`](backend/README.md)) — not required for the frontend
 
 ## Project Structure
 
@@ -117,11 +121,12 @@ sentinel-monitor/
 │   ├── engine/                        Health/alert/event engines, simulation, data providers, live-monitoring scheduler
 │   ├── components/                     Reusable UI component library
 │   └── app.js                           Bootstraps everything
+├── backend/                     Sentinel Core Server — independent FastAPI backend (see backend/README.md)
 ├── docs/                          Architecture, plugin dev guide, roadmap, standards
 └── .github/                       Issue templates, PR template, CODEOWNERS, CI placeholder
 ```
 
-See [`docs/system-overview.md`](docs/system-overview.md) for a subsystem-by-subsystem walkthrough.
+See [`docs/system-overview.md`](docs/system-overview.md) for a frontend subsystem-by-subsystem walkthrough, and [`backend/README.md`](backend/README.md) for the backend's own.
 
 ## Plugin System
 
@@ -162,8 +167,10 @@ Plugins can register device types, widgets, pages, commands, data providers, not
 | 3 | Monitoring Engine | ✅ Complete |
 | 3.5 | Plugin Architecture | ✅ Complete |
 | 4 | Real Monitoring Engine (sensor providers, scheduler, live polling) | ✅ Complete |
-| 4.5 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
-| 5 | FastAPI Backend | ⏳ Planned |
+| 4.5 | Full Visual QA & UI Stabilization | ✅ Complete |
+| 4.6 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
+| 5.1 | Sentinel Core Server Foundation (`backend/`) | ✅ Complete |
+| 5.2+ | Wire frontend ↔ backend; real collectors, auth, history | ⏳ Planned |
 | 6 | Official Plugins (Proxmox, Docker, Ollama, Minecraft, Home Assistant, Pi-hole, OPNsense) | ⏳ Planned |
 | 7 | Historical Analytics | ⏳ Planned |
 | 8 | Automation Engine | ⏳ Planned |
@@ -174,7 +181,7 @@ Full detail, scope, and rationale for each phase: [`docs/roadmap.md`](docs/roadm
 
 ## Screenshots
 
-> _Screenshots will be added once the visualization framework (Phase 4.5) lands. For now, clone the repo and open `index.html` — it's more informative than a static image._
+> _Screenshots will be added once the visualization framework (Phase 4.6) lands. For now, clone the repo and open `index.html` — it's more informative than a static image._
 
 ## Contributing
 

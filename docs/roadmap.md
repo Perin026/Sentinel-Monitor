@@ -44,26 +44,61 @@ sense. The Alerts Foundation this phase asked for turned out to already
 be fully satisfied by Phase 3's `alert-engine.js`; nothing new was built
 there.
 
+### ✅ Phase 4.5 — Full Visual QA & UI Stabilization
+No new features — a full visual QA pass across viewports (390px–3440px)
+and every view/modal, fixing what it found: device-card lists on every
+group view were collapsed to ~1/12th page width (a nested `.widget-grid`
+sat unspanned inside the outer 12-column grid); widget/device-card
+collapse animations didn't actually collapse; the search modal's
+`close()` never removed its own DOM node; the Add Device modal's "Got it"
+button had an empty handler; ultrawide viewports stretched widgets into
+mostly-empty cards; a page-wide horizontal scroll appeared at tablet width
+whenever header status text ran long; and two CSS-specificity bugs meant
+`.header-search`'s mobile hide rule and the mobile drawer's nav
+labels/wordmark had never actually worked, since Phase 1. Also removed 45
+lines of confirmed-orphaned CSS. See `PROJECT_STATE.md` for the full
+list — every issue was found and fixed by measuring the live DOM/CSS in a
+real browser, not by inspection alone.
+
 ---
 
 ## Upcoming
 
-### Phase 4.5 — Visualization Framework
+### Phase 4.6 — Visualization Framework
 Charts, interactive topology map, treemap/sunburst for fleet composition,
 historical graphs backed by the sensor history buffers the engine already
 maintains (now timestamped — see `js/engine/history-engine.js`), heatmaps,
 and a status matrix. This phase is UI/rendering work on top of data the
 engine already produces — no engine changes expected. (This is the
-work originally scoped as "Phase 4," renumbered after the Real Monitoring
-Engine brief took that slot — see `PROJECT_STATE.md`.)
+work originally scoped as "Phase 4," twice renumbered — first when the
+Real Monitoring Engine brief took the "Phase 4" slot, then again when
+Visual QA took the "Phase 4.5" slot — see `PROJECT_STATE.md`.)
 
-### Phase 5 — FastAPI Backend
+### Phase 5 — Backend
 A real backend implementing the `/api/dashboard` contract `ApiProvider`
 already expects, plus a WebSocket endpoint for `WebSocketProvider`. This is
 where "simulated" data starts being replaceable with real data, one
 config value at a time, per the Data Provider architecture from Phase 3.
 Also the natural home for a reference `system` sensor-provider agent
 (Phase 4 built the poller; nothing ships an agent for it to poll yet).
+
+#### ✅ Phase 5.1 — Sentinel Core Server Foundation
+The backend equivalent of Phase 1: architecture, not functionality. A
+FastAPI application (`backend/`) designed to run independently of any one
+client — application factory, DI, structured logging, global exception
+handling, CORS, a config system (env vars/`.env`/YAML/JSON/defaults,
+validated), an async SQLAlchemy + Alembic database layer with the
+repository pattern, a Plugin Manager + generic Registry deliberately
+mirroring `js/plugins/` (same isolation-on-failure guarantee, same "one
+generic registry, not sixteen bespoke ones" reasoning), a WebSocket
+connection manager (connect/disconnect/broadcast/heartbeat/auth hook), and
+a pluggable APScheduler-backed job framework. No monitoring data flows
+yet — `/api/system`, `/api/health`, `/api/version`, `/api/plugins`,
+`/api/settings` all return real (if mostly placeholder) data, and
+collectors/notifications/authentication/history are documented
+`NotImplementedError` seams for Phase 5.2+ to fill in, not silent stubs.
+See [`backend/README.md`](../backend/README.md) and
+[`docs/architecture.md`](architecture.md#sentinel-core-server-phase-51).
 
 ### Phase 6 — Official Plugins
 Real integrations, replacing today's demonstration plugins:

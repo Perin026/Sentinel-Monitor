@@ -1,0 +1,21 @@
+# Sentinel Core Server — checked-in configuration defaults.
+#
+# This file is loaded automatically (see app/config/settings.py) and sits
+# below environment variables and .env in precedence, so it's safe to
+# commit: it should only ever hold non-secret, environment-appropriate
+# defaults. For machine-specific overrides, copy this file's shape into
+# config.local.yaml (already git-ignored) instead of editing this one.
+#
+# JSON is equally supported — config.json / config.local.json are checked
+# in the same precedence order, for teams or tooling that prefer JSON.
+
+app_name: "Sentinel Core Server"
+environment: "development"
+debug: true
+
+cors_origins:
+  - "http://localhost:8080"
+  - "http://127.0.0.1:8080"
+
+log_level: "INFO"
+log_format: "console"

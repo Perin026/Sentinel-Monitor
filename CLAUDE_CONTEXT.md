@@ -9,25 +9,33 @@ the same commit as any change that makes them stale.
 
 ## The one constraint that shapes everything
 
-**Sentinel Monitor is a zero-backend static page, on purpose** — open
-`index.html`, no build step, no `npm install`. See
+**The frontend is a zero-backend static page, on purpose** — open
+`index.html`, no build step, no `npm install`, and that stays true even
+now that `backend/` exists. See
 [`docs/architecture.md`](docs/architecture.md#why-no-framework) for the
-full reasoning. This is not incidental; it's the project's core identity.
+full reasoning. This is not incidental; it's the frontend's core identity,
+and it's *why* the backend (Phase 5.1) was designed the way it was: a
+completely independent service the frontend can optionally point at, not
+something the frontend now requires to run. Don't let backend work leak a
+build step, an API dependency, or any other requirement into `index.html`
+opening standalone — that would break the one property this project has
+protected since Phase 1.
 
-That constraint has a sharp edge: a browser cannot open a raw ICMP or TCP
-socket, and it cannot read another machine's CPU/RAM/disk without
-something running on that machine to ask. Any future phase that wants
+The frontend running standalone has a sharp edge: a browser cannot open a
+raw ICMP or TCP socket, and it cannot read another machine's CPU/RAM/disk
+without something running on that machine to ask. Any phase that wants
 "real" ping, real SNMP, or real host metrics needs one of:
 1. A browser-safe approximation, clearly labeled as one (see Phase 4's
    `ping` sensor provider — HTTP(S)/no-cors timing, not ICMP).
-2. A real backend the browser can `fetch()` from (Phase 5 on the roadmap).
+2. A real backend the browser can `fetch()` from — `backend/` now exists
+   (Phase 5.1) but isn't wired to the frontend yet; that's Phase 5.2.
 3. A local agent the target machine runs (the `system` sensor provider's
-   approach — structurally complete, honestly reports "unreachable" until
-   an agent exists, exactly like `ApiProvider` already did for Phase 5).
+   approach on the frontend, and `app/collectors/base.py` on the backend
+   — both structurally complete, honestly report "unreachable"/raise
+   `NotImplementedError` until an agent exists).
 
 Don't quietly reach for a Node.js backend or a browser extension to solve
-this without flagging it — it's a bigger architectural pivot than it
-looks, and the project has explicitly deferred that to Phase 5.
+this — `backend/` is the answer now, use it (once wired).
 
 ## Load order is the dependency graph
 
@@ -107,11 +115,48 @@ separate; don't collapse `monitorStatus` values into `sensor.status`
 directly, map them through a lookup at render time instead (see
 `MONITOR_CSS_STATUS` in `device-card.js`).
 
+## Backend (Phase 5.1) — read this before touching `backend/`
+
+- **It mirrors the frontend's plugin architecture on purpose.**
+  `backend/app/plugins/registry.py` and `manager.py` are independent
+  implementations of the same shape as `js/plugins/registry.js` /
+  `plugin-manager.js` — same isolate-on-failure guarantee
+  (`_run_isolated`), same generic-registry-not-sixteen-bespoke-classes
+  reasoning. If you're adding a backend extension point, check how the
+  frontend solved the equivalent problem first; don't invent a different
+  pattern for no reason.
+- **`NotImplementedError`, not empty data, for unbuilt features.**
+  `HistoryService`/`AuthenticationService` raise on purpose — see
+  `backend/README.md`'s "What's real vs. a documented seam" table. If you
+  implement one of these for real, that's the file to change; don't leave
+  the raise in place "just in case."
+- **SQLite needs its parent directory to exist before you can connect —
+  it won't create one.** `app/database/session.py`'s
+  `ensure_sqlite_directory_exists()` handles the app's own engine.
+  Alembic's `migrations/env.py` builds a *separate* engine and needed the
+  identical fix applied there too — this was a real bug caught only by
+  actually running `alembic revision --autogenerate`, not by reading the
+  code. If you add another place that connects to the database directly
+  (a script, a one-off tool), call that same function first.
+- **The custom YAML/JSON config sources are `pydantic-settings`
+  extension points**, not a hand-rolled merge (`app/config/loader.py`).
+  If `Settings` gains a field that needs special parsing from a file
+  (nested objects, etc.), extend `FileConfigSource`, don't bypass it with
+  manual `yaml.safe_load()` calls scattered elsewhere.
+- **The backend was actually run to verify this phase**, not just
+  reviewed — see `PROJECT_STATE.md`'s "How Phase 5.1 was verified" for
+  what that caught. If you change something foundational here (the
+  database layer, the app factory, config loading), the bar is the same:
+  boot it and hit the endpoints, don't just read the diff.
+
 ## Testing
 
-No committed test suite yet (see `docs/developer-guide.md`). For Phase 4
-specifically, the most useful verification is running the app in a real
-browser and watching Settings → Live Monitoring plus the browser console
-for a couple of poll cycles — static analysis can't tell you whether a
-sensor provider's chosen target actually behaves under real network
-conditions (see the rate-limit story above).
+Frontend: no committed test suite yet (see `docs/developer-guide.md`).
+For Phase 4 specifically, the most useful verification is running the app
+in a real browser and watching Settings → Live Monitoring plus the
+browser console for a couple of poll cycles — static analysis can't tell
+you whether a sensor provider's chosen target actually behaves under real
+network conditions (see the rate-limit story above).
+
+Backend: `pytest` (`backend/tests/`), each test against its own in-memory
+SQLite database. Run with `python -m pytest -v` from `backend/`.

@@ -244,6 +244,44 @@ about this:
   `mcsrvstat.us` API speaks the actual Minecraft protocol server-side, so
   the browser gets real online/player/MOTD/version data over plain HTTPS.
 
+## Sentinel Core Server (Phase 5.1)
+
+A backend now exists (`backend/`) — but it is not yet wired to anything
+above. Nothing in `js/` changed to accommodate it, and nothing in `js/`
+needs to: `ApiProvider`/`WebSocketProvider` (Phase 3) were built as
+structurally-complete-but-inert seams from the start, specifically so a
+real backend could show up later without the frontend being redesigned
+around it. That's exactly what happened.
+
+The backend was designed with an explicit constraint: **the frontend is a
+client, not part of the server.** Nothing in `backend/app/` imports
+anything frontend-specific, assumes a browser, or hardcodes the web
+dashboard as *the* consumer — a future desktop app, mobile app, or CLI
+should be able to talk to the same API. Concretely:
+- CORS is configured with an explicit origin allowlist (`Settings.cors_origins`),
+  never a wildcard — every client that's allowed to call the API is named,
+  not assumed.
+- Every response is a typed Pydantic schema (`app/schemas/`), independent
+  of any SQLAlchemy model — the wire format doesn't leak storage details
+  to whatever's on the other end of the HTTP call.
+- The plugin architecture, generic registry, and isolate-on-failure
+  guarantee are deliberately mirrored from `js/plugins/` (see
+  `backend/app/plugins/`) — same reasoning, same shape, independently
+  implemented on each side rather than the backend depending on the
+  frontend's JS at all.
+
+Phase 5.1 is architecture, not monitoring: the database layer, plugin
+bootstrap, API skeleton, WebSocket transport, and scheduler are all real
+and running, but `/api/*` returns placeholder/infrastructure data, no
+collector polls anything, and `ApiProvider`/`WebSocketProvider` on the
+frontend still point at nothing by default (`HLM.config.APP.dataProvider`
+stays `"simulation"`). Wiring the two together — pointing the frontend at
+this server and replacing simulated snapshots with real ones — is
+explicitly future work. See [`backend/README.md`](../backend/README.md)
+for the backend's own architecture documentation (folder-by-folder
+responsibilities, what's real vs. a documented seam) rather than
+duplicating it here.
+
 ## Known Limitations (honesty over polish)
 
 - Data is simulated by default. There is no real Proxmox/Docker/Ollama/
@@ -253,8 +291,11 @@ about this:
   marked `monitored: true`.
 - CPU/RAM/disk are never real for any device — that needs a local agent,
   which the `system` sensor provider is ready for but nothing ships yet.
-- There is no backend. `ApiProvider`/`WebSocketProvider` are structurally
-  complete but have nothing real to talk to yet (Phase 5).
+- A backend foundation exists (Phase 5.1, `backend/`) but nothing streams
+  from it yet. `ApiProvider`/`WebSocketProvider` are structurally complete
+  on the frontend and the server now has endpoints to call, but the two
+  are not wired together — that's real business logic, deferred past the
+  architecture-only scope of Phase 5.1.
 - There is no persistence beyond `localStorage` for plugin-scoped settings.
   Refreshing the page resets the simulated fleet's history buffers (and
   the live monitoring scheduler's in-memory state).

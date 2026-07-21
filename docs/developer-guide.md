@@ -18,6 +18,28 @@ The app boots automatically: plugins register, the simulation engine
 starts, and the fleet begins ticking every 2.5 seconds
 (`HLM.config.APP.refreshMs`).
 
+## Running the Backend Locally
+
+The frontend above needs nothing from this — it runs standalone, fully
+simulated, whether or not the backend is up. The backend
+(`backend/`, Sentinel Core Server, Phase 5.1+) is a separate, independently
+runnable service; see [`backend/README.md`](../backend/README.md) for the
+full quick start. Short version:
+
+```bash
+cd backend
+python -m venv .venv && .venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+cp .env.example .env
+python main.py                                    # http://localhost:8000/docs
+```
+
+Nothing on the frontend currently points at it — `HLM.config.APP.dataProvider`
+stays `"simulation"` until a future phase wires `ApiProvider`/
+`WebSocketProvider` to real endpoints (see
+`docs/architecture.md`'s "Sentinel Core Server" section for why that's a
+deliberate, not accidental, gap).
+
 ## Project Layout
 
 See the [Project Structure](../README.md#project-structure) section of the

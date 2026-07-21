@@ -1,0 +1,49 @@
+# Local development / self-hosted deployment.
+#   docker compose up --build
+# The API is then live at http://localhost:8000 (Swagger at /docs).
+#
+# Uses SQLite with a persistent named volume by default — zero extra
+# services to stand up. To move to PostgreSQL later (see Settings.database_url
+# in app/config/settings.py), uncomment the `db` service below and point
+# SENTINEL_DATABASE_URL at it; nothing else in the app needs to change,
+# since every query goes through the async SQLAlchemy engine either way.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sentinel-core-server:local
+    container_name: sentinel-core-server
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      SENTINEL_ENVIRONMENT: development
+      SENTINEL_DATABASE_URL: sqlite+aiosqlite:////app/data/sentinel.db
+    volumes:
+      - sentinel-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: sentinel-postgres
+  #   environment:
+  #     POSTGRES_USER: sentinel
+  #     POSTGRES_PASSWORD: change-me
+  #     POSTGRES_DB: sentinel
+  #   volumes:
+  #     - sentinel-postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+volumes:
+  sentinel-data:
+  # sentinel-postgres-data:

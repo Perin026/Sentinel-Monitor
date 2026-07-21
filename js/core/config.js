@@ -11,7 +11,7 @@
   const APP = {
     name: "Sentinel Monitor",
     shortName: "Sentinel",
-    version: "0.5.0-alpha",
+    version: "0.6.0-alpha",
     refreshMs: 2500,
     historyPoints: 120,
     dataUrl: null,          // set to an /api/dashboard endpoint to enable ApiProvider
