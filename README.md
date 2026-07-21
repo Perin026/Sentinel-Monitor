@@ -34,7 +34,7 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 
 ## Project Status
 
-> **Alpha.** The UI framework, monitoring engine, plugin architecture, and a real (opt-in) live-monitoring path are complete and tested — as is a backend foundation (Sentinel Core Server) that isn't wired to the frontend yet. Most of the demo fleet is still **simulated** — two devices are genuinely polled over the network to prove the mechanism end-to-end. See the [Roadmap](#roadmap) for what's next.
+> **Alpha.** The UI framework, monitoring engine, and plugin architecture are complete and tested. There's a real (opt-in) live-monitoring path — two devices are genuinely polled over the network — and, as of Phase 5.2, a working (if not yet default) path to a real backend: `ApiProvider` now renders genuine Sentinel Core Server data through the frontend's completely unmodified pipeline. Most of the demo fleet is still **simulated** by default. See the [Roadmap](#roadmap) for what's next.
 
 ## Features
 
@@ -47,11 +47,12 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 - Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface — Minecraft's player-count/MOTD/version check is genuinely real, the rest remain architectural demonstrations
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
 - Zero build step — open `index.html` and it runs
-- **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. Runs standalone, verified working end-to-end; not yet wired to the frontend. See [`backend/README.md`](backend/README.md)
+- **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. See [`backend/README.md`](backend/README.md)
+- **Frontend ↔ backend integration** (Phase 5.2, in progress): `ApiProvider` genuinely fetches and renders real backend data — proven by switching `HLM.config.APP.dataProvider` to `"api"` and watching real values flow through the *same* Store, health engine, and widgets the simulator uses, completely unmodified. Still opt-in (`"simulation"` stays the default) until automatic fallback/reconnect exists. See [`docs/api-contract.md`](docs/api-contract.md)
 
 **Not yet implemented** (see [Roadmap](#roadmap)):
 - Charts, topology maps, and historical graphs (Phase 4.6)
-- Wiring the frontend's `ApiProvider`/`WebSocketProvider` to the new backend, and real collectors/authentication/history behind it (Phase 5.2+)
+- Automatic simulation fallback / reconnect when a real backend goes away (Phase 5.2, Milestone 5.2.2), and real collectors/authentication/history behind the backend (Phase 5.2+/6+)
 - Full third-party integrations for the other five example plugins (Phase 6) — RCON-level Minecraft control, real Proxmox/Docker/Ollama/Home Assistant/Pi-hole APIs
 - Authentication, multi-user support, notification delivery (Discord/ntfy/email)
 
@@ -170,7 +171,8 @@ Plugins can register device types, widgets, pages, commands, data providers, not
 | 4.5 | Full Visual QA & UI Stabilization | ✅ Complete |
 | 4.6 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
 | 5.1 | Sentinel Core Server Foundation (`backend/`) | ✅ Complete |
-| 5.2+ | Wire frontend ↔ backend; real collectors, auth, history | ⏳ Planned |
+| 5.2 | Frontend ↔ Backend Integration (real `ApiProvider`, Connection Manager, fallback) | 🔄 In progress |
+| 5.2+/6+ | Real collectors, authentication, history behind the backend | ⏳ Planned |
 | 6 | Official Plugins (Proxmox, Docker, Ollama, Minecraft, Home Assistant, Pi-hole, OPNsense) | ⏳ Planned |
 | 7 | Historical Analytics | ⏳ Planned |
 | 8 | Automation Engine | ⏳ Planned |

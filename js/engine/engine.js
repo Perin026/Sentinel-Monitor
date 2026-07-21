@@ -136,5 +136,5 @@
     }
   }
 
-  HLM.engine = { start, refresh, setMaintenance, acknowledgeAlert };
+  HLM.engine = { start, refresh, setMaintenance, acknowledgeAlert, switchProvider };
 })(window.HLM = window.HLM || {});

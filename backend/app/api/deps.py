@@ -16,6 +16,7 @@ from app.config.settings import Settings, get_settings
 from app.database.session import get_session
 from app.services.authentication_service import AuthenticationService
 from app.services.configuration_service import ConfigurationService
+from app.services.dashboard_service import DashboardService
 from app.services.database_service import DatabaseService
 from app.services.health_service import HealthService
 from app.services.notification_service import NotificationService
@@ -59,7 +60,12 @@ def get_authentication_service() -> AuthenticationService:
     return AuthenticationService()
 
 
+def get_dashboard_service(session: SessionDep) -> DashboardService:
+    return DashboardService(session)
+
+
 ConfigurationServiceDep = Annotated[ConfigurationService, Depends(get_configuration_service)]
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
 DatabaseServiceDep = Annotated[DatabaseService, Depends(get_database_service)]
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 PluginServiceDep = Annotated[PluginService, Depends(get_plugin_service)]

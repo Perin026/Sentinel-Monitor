@@ -82,13 +82,16 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency — one session per request, always closed, rolled
-    back on any unhandled exception so a failed request can't leave a
-    half-committed transaction behind."""
+    """FastAPI dependency — one session per request. Commits automatically
+    once the route handler returns without raising; rolls back on any
+    unhandled exception so a failed request can't leave a half-committed
+    transaction behind. Route/service code should never call
+    `session.commit()` itself — this is the one place that decides."""
     factory = get_session_factory()
     async with factory() as session:
         try:
             yield session
+            await session.commit()
         except Exception:
             await session.rollback()
             raise

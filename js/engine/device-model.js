@@ -51,5 +51,52 @@
     };
   }
 
-  HLM.deviceModel = { typeDefinition, hydrateDevice };
+  /**
+   * Phase 5.2 — turns one raw device from the backend's `/api/dashboard`
+   * response (see docs/api-contract.md) into the exact same shape
+   * `hydrateDevice()` produces for a simulated one. The backend only ever
+   * sends fact it can honestly know (identity, reachability, raw sensor
+   * numbers); this is where that gets merged with the plugin-registered
+   * type definition (thresholds, units, labels, icon, group) — the same
+   * `typeDefinition()` lookup `hydrateDevice()` uses, so a device type
+   * only ever needs to be defined once, in one plugin, regardless of
+   * which DataProvider is active.
+   *
+   * Field names are translated from the API's snake_case (`booted_at`) to
+   * this codebase's camelCase on the way in — the one and only place that
+   * translation happens, so nothing downstream needs to know the backend
+   * uses a different naming convention than the frontend does.
+   *
+   * @param {object} raw  one entry from DashboardResponse.devices
+   */
+  function hydrateFromSnapshot(raw){
+    const def = typeDefinition(raw.type);
+    const sensors = {};
+    def.sensors.forEach(sensorDef => {
+      const rawValue = raw.sensors ? raw.sensors[sensorDef.key] : undefined;
+      const value = typeof rawValue === "number" ? rawValue : sensorDef.min;
+      sensors[sensorDef.key] = {
+        def: sensorDef,
+        value: Math.round(value * 10) / 10,
+        status: "ok", // recomputed from value+thresholds by health-engine.js on this same tick
+      };
+    });
+
+    return {
+      id: raw.id,
+      name: raw.name || raw.id,
+      type: raw.type,
+      hostname: raw.hostname || "",
+      ip: raw.ip || "",
+      group: def.group,
+      status: raw.status || "ok",
+      maintenance: !!raw.maintenance,
+      incident: null,
+      bootedAt: raw.booted_at ?? Date.now(),
+      lastCheck: Date.now(),
+      sensors,
+    };
+  }
+
+  HLM.deviceModel = { typeDefinition, hydrateDevice, hydrateFromSnapshot };
 })(window.HLM = window.HLM || {});

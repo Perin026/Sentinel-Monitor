@@ -11,7 +11,48 @@ between minor versions, as permitted by SemVer.
 
 ## [Unreleased]
 
-Nothing yet.
+### Phase 5.2 (in progress) — Frontend ↔ Backend Integration
+
+**Milestone 5.2.1 — API contract, ApiProvider, Store integration.**
+Architectural validation: the frontend now genuinely renders real backend
+data through its existing, unmodified pipeline — no widget, engine file,
+or the Store itself changed.
+
+- `docs/api-contract.md`: the official contract, mapping every concept
+  (Dashboard/Devices/Sensors/Groups/Alerts/Events/Plugins/Settings/
+  Health/History/Version/Errors/Status) to a real endpoint or an explicit
+  "derived on the frontend, not served" note
+- Backend: `GET /api/dashboard`, a minimal `Device` model + migration,
+  `DashboardService` (seeds a few generic demo devices —
+  `linux`/`windows`/`nas`, not vendor-specific — and jitters their values
+  slightly on each read, enough to prove the round trip without
+  implementing any real collector)
+- Frontend: `hydrateFromSnapshot()` (`js/engine/device-model.js`) merges a
+  raw backend device with the plugin-registered type definition — the
+  same `def`-merge `hydrateDevice()` already does for the simulated seed
+  list, just fed real values
+- Frontend: `ApiProvider` (`js/engine/data-provider.js`) is now real —
+  fetch timeout, in-poll retry with backoff, defensive per-device
+  validation (a malformed entry is skipped, not fatal), chained
+  `setTimeout` instead of `setInterval` (matches
+  `monitoring-scheduler.js`'s reasoning: once a poll can retry, its
+  worst case can exceed the interval)
+
+**Two real bugs found only because this was actually exercised, not
+reviewed:**
+- `app/database/session.py`'s `get_session()` never committed — DB writes
+  would have silently vanished. Fixed before it could bite: commit on
+  clean return, rollback on exception.
+- `app.js`'s Overview ("Fleet Health" subtitle, "Devices Online" bar) and
+  Settings ("Fleet Size") widgets hardcoded `HLM.config.DEVICES.length` —
+  correct for `SimulationProvider` (whose fleet is always exactly that
+  static list) but wrong the instant a real backend reports a different
+  device count. Both now read live counts from the store.
+- Also: `mountDeviceGroupView()` never removed a device card once its
+  device disappeared from a snapshot — invisible with
+  `SimulationProvider` (fleet size never changes at runtime), a real bug
+  the moment `ApiProvider`'s fleet can differ. Fixed: cards are pruned
+  when their device is no longer present in the current tick.
 
 ---
 

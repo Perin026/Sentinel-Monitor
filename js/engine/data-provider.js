@@ -29,39 +29,95 @@
     refresh(){ /* optional: subclasses may support forcing a tick */ }
   }
 
+  function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
   /**
-   * Polls HLM.config.APP.dataUrl on the configured interval and expects
-   * a JSON body shaped like { devices: {}, services: {}, environment: {},
-   * alerts: [], events: [] } — the contract documented in the Phase 1 brief.
-   * Structurally complete; there is no live backend yet, so this will
-   * simply fail to fetch and report "reconnecting" until one exists.
+   * Polls HLM.config.APP.dataUrl (an `/api/dashboard`-shaped endpoint —
+   * see docs/api-contract.md) on the configured interval. Real as of
+   * Phase 5.2: fetch with a hard timeout, a short in-poll retry with
+   * backoff before giving up on a tick, and per-device hydration that
+   * skips (rather than crashes on) a malformed entry.
+   *
+   * Uses a self-rescheduling `setTimeout` chain rather than `setInterval`
+   * — the same reasoning as js/engine/monitoring-scheduler.js: once a
+   * poll can retry internally, its worst-case duration can exceed
+   * `intervalMs`, and `setInterval` would let a slow poll overlap itself.
    */
   class ApiProvider extends DataProvider {
     constructor(opts){
       super(opts);
       this.url = opts.url;
       this.intervalMs = opts.intervalMs || 2500;
+      this.timeoutMs = opts.timeoutMs || 4000;
+      this.maxRetries = opts.maxRetries ?? 2;
       this._timer = null;
+      this._stopped = true;
     }
-    async _poll(){
+
+    async _fetchOnce(){
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try{
-        const res = await fetch(this.url, { cache: "no-store" });
+        const res = await fetch(this.url, { cache: "no-store", signal: controller.signal });
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const snapshot = await res.json();
-        this.onStatus("live");
-        this.onTick({ ...snapshot, timestamp: Date.now() });
-      } catch(err){
-        this.onStatus("reconnecting");
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
       }
     }
+
+    /** Turns { devices: {...} } into hydrated devices, keyed by id — never
+     *  throws for one bad entry; skips it and keeps the rest of the tick. */
+    _hydrateSnapshot(raw){
+      if(!raw || typeof raw !== "object" || typeof raw.devices !== "object" || raw.devices === null){
+        throw new Error("Malformed dashboard payload: missing `devices`");
+      }
+      const devices = {};
+      Object.values(raw.devices).forEach(rawDevice => {
+        try{
+          const device = HLM.deviceModel.hydrateFromSnapshot(rawDevice);
+          devices[device.id] = device;
+        } catch(err){
+          console.error("[ApiProvider] Skipping malformed device in dashboard payload:", err, rawDevice);
+        }
+      });
+      return devices;
+    }
+
+    async _poll(){
+      let lastError = null;
+      for(let attempt = 0; attempt <= this.maxRetries; attempt++){
+        try{
+          const raw = await this._fetchOnce();
+          const devices = this._hydrateSnapshot(raw);
+          this.onStatus("live");
+          this.onTick({ devices, timestamp: Date.now() });
+          lastError = null;
+          break;
+        } catch(err){
+          lastError = err;
+          if(attempt < this.maxRetries) await sleep(Math.min(2000, 400 * (attempt + 1)));
+        }
+      }
+      if(lastError){
+        console.error(`[ApiProvider] Poll failed after ${this.maxRetries + 1} attempt(s):`, lastError);
+        this.onStatus("reconnecting");
+      }
+      if(!this._stopped){
+        this._timer = setTimeout(() => this._poll(), this.intervalMs);
+      }
+    }
+
     start(){
+      this._stopped = false;
       this._poll();
-      this._timer = setInterval(() => this._poll(), this.intervalMs);
     }
     stop(){
-      clearInterval(this._timer);
+      this._stopped = true;
+      clearTimeout(this._timer);
     }
     refresh(){
+      clearTimeout(this._timer);
       this._poll();
     }
   }

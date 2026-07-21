@@ -273,14 +273,41 @@ should be able to talk to the same API. Concretely:
 Phase 5.1 is architecture, not monitoring: the database layer, plugin
 bootstrap, API skeleton, WebSocket transport, and scheduler are all real
 and running, but `/api/*` returns placeholder/infrastructure data, no
-collector polls anything, and `ApiProvider`/`WebSocketProvider` on the
-frontend still point at nothing by default (`HLM.config.APP.dataProvider`
-stays `"simulation"`). Wiring the two together — pointing the frontend at
-this server and replacing simulated snapshots with real ones — is
-explicitly future work. See [`backend/README.md`](../backend/README.md)
+collector polls anything. See [`backend/README.md`](../backend/README.md)
 for the backend's own architecture documentation (folder-by-folder
 responsibilities, what's real vs. a documented seam) rather than
 duplicating it here.
+
+## Frontend ↔ Backend Integration (Phase 5.2)
+
+`ApiProvider` is real now — see `docs/api-contract.md` for the wire
+contract and `PROJECT_STATE.md` for how it was verified. The default is
+still `"simulation"` (`HLM.config.APP.dataProvider`); this phase proves
+the *path* works, not that it should be the default yet — that's what
+Milestone 5.2.2's automatic fallback is for.
+
+The mechanism is deliberately a thin adapter, not a parallel pipeline:
+`ApiProvider` fetches `GET /api/dashboard`, and
+`HLM.deviceModel.hydrateFromSnapshot()` (js/engine/device-model.js) merges
+each raw device with the plugin-registered type definition — the exact
+same `typeDefinition()` lookup `hydrateDevice()` already used for
+`config.js`'s static seed list. From that point on, the snapshot is
+indistinguishable from a simulated one: `engine.js`'s `runPipeline()`,
+`health-engine.js`, `alert-engine.js`, `event-engine.js`, the Store, and
+every widget are **completely unmodified**. This is the architectural
+claim Phase 3 made when `DataProvider` was designed as a swappable
+interface, now actually exercised rather than merely structurally
+plausible.
+
+Two real bugs surfaced only by actually connecting the two sides (not by
+review) — see `CHANGELOG.md`'s `[Unreleased]` entry and
+`PROJECT_STATE.md` for details: a backend session that silently never
+committed writes, and two frontend places that assumed a device count
+never differs from `HLM.config.DEVICES.length` (true for
+`SimulationProvider` by construction, false the instant a real backend's
+fleet size can differ) — one of which (`mountDeviceGroupView`) had never
+removed a stale device card once its device disappeared from a snapshot,
+because no snapshot's device set had ever shrunk before this phase.
 
 ## Known Limitations (honesty over polish)
 

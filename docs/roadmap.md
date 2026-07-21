@@ -100,6 +100,16 @@ collectors/notifications/authentication/history are documented
 See [`backend/README.md`](../backend/README.md) and
 [`docs/architecture.md`](architecture.md#sentinel-core-server-phase-51).
 
+#### 🔄 Phase 5.2 — Frontend ↔ Backend Integration (in progress)
+Architectural validation, explicitly not new features: prove that
+`ApiProvider` and `SimulationProvider` are genuinely interchangeable by
+actually connecting them. Milestone 5.2.1 (API contract, real
+`ApiProvider`, Store integration via `hydrateFromSnapshot()`) is
+complete — see `CHANGELOG.md`'s `[Unreleased]` section and
+`docs/api-contract.md`. Remaining: a Connection Manager + automatic
+simulation fallback (5.2.2), then testing/documentation/final review
+(5.2.3).
+
 ### Phase 6 — Official Plugins
 Real integrations, replacing today's demonstration plugins:
 - Proxmox (VE API)

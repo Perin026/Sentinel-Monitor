@@ -28,7 +28,9 @@ without something running on that machine to ask. Any phase that wants
 1. A browser-safe approximation, clearly labeled as one (see Phase 4's
    `ping` sensor provider — HTTP(S)/no-cors timing, not ICMP).
 2. A real backend the browser can `fetch()` from — `backend/` now exists
-   (Phase 5.1) but isn't wired to the frontend yet; that's Phase 5.2.
+   and `ApiProvider` genuinely renders its data (Phase 5.2), though
+   `"simulation"` stays the default until Milestone 5.2.2's fallback
+   exists.
 3. A local agent the target machine runs (the `system` sensor provider's
    approach on the frontend, and `app/collectors/base.py` on the backend
    — both structurally complete, honestly report "unreachable"/raise
@@ -148,6 +150,42 @@ directly, map them through a lookup at render time instead (see
   what that caught. If you change something foundational here (the
   database layer, the app factory, config loading), the bar is the same:
   boot it and hit the endpoints, don't just read the diff.
+- **`get_session()` commits automatically on a clean return, rolls back
+  on exception** — this wasn't true until Phase 5.2 (a real bug: writes
+  silently never persisted). Route/service code should never call
+  `session.commit()` itself; that's `get_session()`'s job, in exactly
+  one place.
+
+## Frontend ↔ Backend Integration (Phase 5.2) — read this before touching either side's data flow
+
+- **`ApiProvider` is a thin adapter, not a parallel pipeline.** It fetches
+  `/api/dashboard`, calls `HLM.deviceModel.hydrateFromSnapshot()` per
+  device, and hands the result to the exact same `onTick` callback
+  `SimulationProvider` uses. If you're tempted to special-case "when the
+  provider is api" anywhere downstream of that (the Store, an engine
+  file, a widget), stop — that's exactly the coupling this phase exists
+  to prove doesn't need to happen. See `docs/api-contract.md`.
+- **The backend doesn't know sensor thresholds, units, or labels — on
+  purpose.** `hydrateFromSnapshot()` resolves those from
+  `HLM.registries.deviceTypes` (frontend plugin config), the same lookup
+  `hydrateDevice()` uses for the simulated seed list. A raw device from
+  the backend only ever needs `type` + raw sensor numbers. Don't add
+  presentation fields to `app/models/device.py` or the dashboard schema
+  — see that model's docstring for why.
+- **Any code that assumes the live device count equals
+  `HLM.config.DEVICES.length` is a latent bug.** That equality only ever
+  held because `SimulationProvider`'s fleet *is* that array. It broke
+  twice in one milestone (Overview/Settings widgets, and
+  `mountDeviceGroupView`'s never-pruned device cards) the instant
+  `ApiProvider` reported a different count — see `PROJECT_STATE.md`'s
+  Milestone 5.2.1 section. If you add a new widget or view that reads
+  `HLM.config.DEVICES` directly instead of `HLM.store.get().devices`,
+  you're probably reintroducing this.
+- **Test both directions of a provider switch, not just one.** Switching
+  simulation → api once isn't enough evidence a fix works — the
+  device-card-pruning bug above only fully proved itself fixed by
+  switching back to simulation afterward and confirming the cards
+  correctly reappeared (see `PROJECT_STATE.md`).
 
 ## Testing
 

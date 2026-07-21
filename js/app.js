@@ -159,6 +159,7 @@
 
   function mountOverview(grid){
     const health = HLM.ui.createWidget({ title: "Fleet Health", subtitle: `${HLM.config.DEVICES.length} devices tracked`, icon: "shield", status: "ok" });
+    const healthSubtitleEl = health.el.querySelector(".widget-subtitle");
     health.el.classList.add("span-3");
     const healthGauge = HLM.ui.createCircularGauge({ value: 100, unit: "%", warn: 85, critical: 70, invert: true, size: "lg" });
     health.setContent(healthGauge.el);
@@ -203,6 +204,10 @@
 
       healthGauge.update(s.systemHealth.score);
       health.setStatus(s.systemHealth.status === "ok" ? "ok" : s.systemHealth.status === "critical" ? "critical" : "warn");
+      // Live count, not HLM.config.DEVICES.length — that's only correct for
+      // SimulationProvider. ApiProvider's fleet size is whatever the backend
+      // reports and can differ (see docs/api-contract.md).
+      if(healthSubtitleEl) healthSubtitleEl.textContent = `${devices.length} device${devices.length === 1 ? "" : "s"} tracked`;
 
       const cpuAvg = avgSensor(devices, "cpu"), ramAvg = avgSensor(devices, "ram"), storageAvg = avgSensor(devices, "storage");
       cpuGauge.update(cpuAvg);
@@ -215,7 +220,7 @@
       alertsCounter.update(s.alerts.filter(a => !a.resolved).length);
 
       const onlineCount = devices.length - s.systemHealth.offlineCount;
-      onlineBar.update(onlineCount, s.systemHealth.offlineCount > 0 ? "warn" : "ok");
+      onlineBar.update(onlineCount, s.systemHealth.offlineCount > 0 ? "warn" : "ok", devices.length);
 
       const longest = devices.reduce((max, d) => (Date.now() - d.bootedAt) > max.ms ? { ms: Date.now() - d.bootedAt, device: d } : max, { ms: 0, device: null });
       if(longest.device){
@@ -252,7 +257,9 @@
       }
       grid.querySelector(".empty-state")?.remove();
 
+      const seenIds = new Set();
       devices.forEach(device => {
+        seenIds.add(device.id);
         let card = cardsById.get(device.id);
         if(!card){
           card = HLM.ui.createDeviceCard(device);
@@ -261,6 +268,17 @@
         } else {
           card.update(device);
         }
+      });
+
+      // A device present in a prior tick but absent from this one is gone
+      // for good (not just "no update this tick") — SimulationProvider's
+      // fleet never shrinks at runtime, so this never fired before
+      // ApiProvider existed. Without it, a device removed from the
+      // backend would leave a permanently frozen, stale card behind.
+      cardsById.forEach((card, id) => {
+        if(seenIds.has(id)) return;
+        card.el.remove();
+        cardsById.delete(id);
       });
     }
 
@@ -361,11 +379,22 @@
 
     const fleet = HLM.ui.createWidget({ title: "Fleet Size", icon: "grid", collapsible: false });
     fleet.el.classList.add("span-4");
-    const sensorCount = HLM.config.DEVICES.reduce((sum, d) => sum + (HLM.registries.deviceTypes.get(d.type)?.sensors.length || 0), 0);
-    fleet.setContent(el("div", {}, [
-      el("div", { class: "counter size-lg" }, [String(HLM.config.DEVICES.length)]),
-      el("div", { class: "counter-label" }, [`${sensorCount} sensors across ${HLM.config.DEVICES.length} devices`]),
-    ]));
+    const fleetCountEl = el("div", { class: "counter size-lg" }, ["0"]);
+    const fleetLabelEl = el("div", { class: "counter-label" }, ["—"]);
+    fleet.setContent(el("div", {}, [fleetCountEl, fleetLabelEl]));
+
+    // Live, not HLM.config.DEVICES.length — that's only the SimulationProvider
+    // seed count. ApiProvider's fleet is whatever the backend reports, which
+    // can genuinely differ (see docs/api-contract.md). Starts at 0 before the
+    // engine's first tick, same as every other store-driven widget here.
+    function renderFleetSize(s){
+      const devices = Object.values(s.devices);
+      const sensorCount = devices.reduce((sum, d) => sum + Object.keys(d.sensors).length, 0);
+      fleetCountEl.textContent = String(devices.length);
+      fleetLabelEl.textContent = `${sensorCount} sensors across ${devices.length} device${devices.length === 1 ? "" : "s"}`;
+    }
+    HLM.store.subscribe(renderFleetSize, s => s.lastTick);
+    renderFleetSize(HLM.store.get());
 
     grid.append(source.el, refresh.el, fleet.el);
     mountMonitoringPanel(grid);

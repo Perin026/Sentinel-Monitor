@@ -7,8 +7,8 @@
 
 ## Where things stand
 
-**Current version:** `0.6.0-alpha`
-**Last completed phase:** Phase 5.1 — Sentinel Core Server Foundation
+**Current version:** `0.6.0-alpha` (unchanged — Phase 5.2 is still in progress; see `[Unreleased]` in `CHANGELOG.md`)
+**Last completed milestone:** Phase 5.2, Milestone 5.2.1 — API contract, real `ApiProvider`, Store integration
 
 A note on numbering, now twice-relevant: the roadmap drafted after
 Phase 3.5 originally scoped its *next* phase as "Visualization Framework."
@@ -143,29 +143,80 @@ this environment, so the `Dockerfile`/`docker-compose.yml` are carefully
 written and reviewed but not build-verified — flagged honestly rather
 than claimed as tested.
 
+## Phase 5.2, Milestone 5.2.1 — what was built
+
+The frontend is no longer just *ready* for a real backend — it renders
+one, through the exact same pipeline it always used. Verified live:
+switching `HLM.config.APP.dataProvider` to `"api"` (still opt-in; default
+stays `"simulation"`) makes real Sentinel Core Server data flow through
+`hydrateFromSnapshot()` → `runPipeline()` → the Store → every widget,
+with **zero changes** to `health-engine.js`, `alert-engine.js`,
+`event-engine.js`, the Store itself, or any widget/component file. See
+`docs/api-contract.md` for the wire contract and
+`docs/architecture.md`'s "Frontend ↔ Backend Integration" section for the
+mechanism.
+
+Backend gained: a minimal `Device` model + migration, `DashboardService`
+(seeds a few generic — not vendor-specific — demo devices and jitters
+their values, enough to prove the round trip without a real collector),
+`GET /api/dashboard`.
+
+**Three real bugs found only by actually connecting the two sides, not
+by review or the existing test suite:**
+1. `app/database/session.py`'s `get_session()` never called
+   `session.commit()` — every DB write since Phase 5.1 would have
+   silently vanished. The existing tests never caught this because they
+   override the session dependency entirely, bypassing it. Fixed:
+   commit on clean return, rollback on exception.
+2. `app.js`'s Overview and Settings widgets hardcoded
+   `HLM.config.DEVICES.length` as the fleet size — correct by
+   construction for `SimulationProvider` (impossible for that number to
+   be wrong, since its device set *is* that array), silently wrong the
+   instant `ApiProvider` reports a different count. Fixed to read live
+   counts from the store.
+3. `mountDeviceGroupView()` never removed a device card once its device
+   disappeared from a snapshot — again invisible with
+   `SimulationProvider`, whose fleet never shrinks at runtime. Verified
+   the fix in both directions (switching to a smaller API fleet removes
+   the extra cards; switching back to simulation correctly recreates
+   them, not leaves them missing).
+
+All three are exactly what "prove the architecture" (this phase's
+explicit goal) is for — implicit assumptions that held by construction
+under the only provider ever actually used, surfaced the moment a second
+one was.
+
 ## Known limitations (honesty over polish)
 
-- The backend is not wired to the frontend. This is the single biggest
-  remaining gap and the natural next phase (5.2).
-- Real monitoring (frontend) is opt-in per device instance and currently
-  only configured for two demo devices; no UI exists yet for a user to
-  mark their own device `monitored: true` without editing `config.js`
-  directly.
+- `ApiProvider` is opt-in, not the default — Milestone 5.2.2's automatic
+  simulation fallback needs to exist first, or a backend outage would
+  break the app for anyone defaulted to `"api"`.
+- The backend's `/api/dashboard` data is synthetic demo values, not a
+  real collector — explicitly out of scope for this phase (see
+  `docs/api-contract.md`).
+- Real monitoring (frontend, Phase 4) is opt-in per device instance and
+  currently only configured for two demo devices; no UI exists yet for a
+  user to mark their own device `monitored: true` without editing
+  `config.js` directly.
 - `system` sensor provider (frontend) and any future backend collector
   both need an agent to talk to; none ships yet.
 - No graphing UI consumes the frontend's timestamped history buffers yet
   (Phase 4.6).
-- Backend `Dockerfile`/`docker-compose.yml` are unverified — no Docker
-  in the environment they were built in (see above).
+- Backend `Dockerfile`/`docker-compose.yml` are unverified — no Docker in
+  the environment they were built in.
 - Backend has no real plugins, collectors, notification providers,
-  authentication, or history storage — all documented seams, Phase 5.2+
+  authentication, or history storage — all documented seams, later-phase
   territory.
+- `WebSocketProvider` is untouched by this milestone — still
+  structurally-complete-but-inert, matching the backend's `/ws` endpoint
+  which is transport-only (Phase 5.1). Not this phase's scope either.
 
-## Immediate next phase
+## Immediate next
 
-See `docs/roadmap.md` for the full list. Two reasonable candidates:
-- **Phase 5.2**: wire the frontend's `ApiProvider`/`WebSocketProvider` to
-  this backend, replacing simulated data with real data one config value
-  at a time — the payoff this foundation was built for.
-- **Phase 4.6**: charts/graphs against the frontend's timestamped history
+**Milestone 5.2.2** (same phase): a Connection Manager (backend
+availability, latency, heartbeat, connection quality — richer than
+`ApiProvider`'s own per-poll retry), automatic simulation fallback when
+the backend goes away, automatic reconnect when it returns, and backend
+self-monitoring surfaced in the UI. Then **Milestone 5.2.3**: testing,
+full documentation pass, final architecture review. See `docs/roadmap.md`
   buffers, independent of backend work.

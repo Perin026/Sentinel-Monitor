@@ -14,7 +14,11 @@
     version: "0.6.0-alpha",
     refreshMs: 2500,
     historyPoints: 120,
-    dataUrl: null,          // set to an /api/dashboard endpoint to enable ApiProvider
+    // Points at Sentinel Core Server's dashboard endpoint (see backend/
+    // and docs/api-contract.md). Left populated even though dataProvider
+    // still defaults to "simulation" — switching to a real backend is
+    // meant to be exactly one value away, not a URL to go look up too.
+    dataUrl: "http://localhost:8000/api/dashboard",
     dataProvider: "simulation", // "simulation" | "api" | "websocket" — see js/engine/data-provider.js
   };
 

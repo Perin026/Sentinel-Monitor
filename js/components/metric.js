@@ -51,14 +51,18 @@
    * pass `striped: true` for an in-progress / indeterminate feel.
    */
   function createProgressBar(opts){
-    const { value = 0, max = 100, status = null, striped = false, showValue = true } = opts;
+    const { value = 0, max: initialMax = 100, status = null, striped = false, showValue = true } = opts;
+    let max = initialMax;
 
     const fill = el("div", { class: "progress-bar-fill" });
     const bar = el("div", { class: `progress-bar${striped ? " striped" : ""}${status ? ` status-${status}` : ""}` }, [fill]);
     const valueEl = showValue ? el("span", { class: "progress-bar-value" }, ["0%"]) : null;
     const root = el("div", { class: "progress-bar-row" }, [bar, valueEl]);
 
-    function update(nextValue, nextStatus){
+    /** @param {number} [nextMax] — pass when the denominator itself can change
+     *  (e.g. live device count differing from a static config seed count). */
+    function update(nextValue, nextStatus, nextMax){
+      if(typeof nextMax === "number") max = nextMax;
       const pct = clamp((nextValue / max) * 100, 0, 100);
       fill.style.width = `${pct}%`;
       if(valueEl) valueEl.textContent = `${round(pct, 0)}%`;
