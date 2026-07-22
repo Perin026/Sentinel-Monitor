@@ -7,8 +7,8 @@
 
 ## Where things stand
 
-**Current version:** `0.6.0-alpha` (unchanged — Phase 5.2 is still in progress; see `[Unreleased]` in `CHANGELOG.md`)
-**Last completed milestone:** Phase 5.2, Milestone 5.2.2 — Connection Manager, automatic fallback/reconnect, backend self-monitoring
+**Current version:** `0.6.0-alpha` (unchanged — Phase 5.2 is complete but is architectural validation, not a feature release; see `[Unreleased]` in `CHANGELOG.md`)
+**Last completed milestone:** Phase 5.2, Milestone 5.2.3 — testing, documentation, final architecture review (Phase 5.2 now complete)
 
 A note on numbering, now twice-relevant: the roadmap drafted after
 Phase 3.5 originally scoped its *next* phase as "Visualization Framework."
@@ -49,16 +49,23 @@ complete, but nothing ships an agent yet).
 
 `backend/` (Sentinel Core Server) is a real, running FastAPI service —
 verified by actually booting it and hitting every endpoint, not just code
-review (see "How Phase 5.1 was verified" below). It is **not** wired to
-the frontend: `HLM.config.APP.dataProvider` still defaults to
-`"simulation"`, and nothing on the frontend has changed. The backend and
-frontend are two independently-runnable things right now, on purpose.
+review (see "How Phase 5.1 was verified" below). As of Phase 5.2 it is now
+**optionally** wired to the frontend: `HLM.config.APP.dataProvider` still
+defaults to `"simulation"` (the frontend never *requires* the backend),
+but setting it to `"api"` with `dataUrl` pointing at `/api/dashboard`
+makes the frontend render real backend data through its unmodified
+pipeline, with automatic fallback to simulation and automatic reconnect
+if the backend goes away. The two remain independently-runnable — that
+property is preserved, not abandoned.
 
 What's real: app factory, DI, structured logging, global exception
 handling, CORS, the env/YAML/JSON config system, async SQLAlchemy +
 Alembic migrations (verified end-to-end), a Plugin Manager + generic
-Registry mirroring the frontend's, `/api/system`, `/api/health` (readiness
-— db/scheduler/websocket/plugins), `/api/version`, `/api/plugins`,
+Registry mirroring the frontend's, `/api/dashboard` (the snapshot
+`ApiProvider` polls — synthetic demo devices for now, real round trip),
+`/api/system` (real self-monitoring — process CPU/memory via `psutil`,
+uptime, live DB/scheduler status), `/api/health` (readiness —
+db/scheduler/websocket/plugins), `/api/version`, `/api/plugins`,
 `/api/settings`, root `/health` (liveness) and `/`, a WebSocket connection
 manager with heartbeat and graceful disconnect (verified live), and an
 APScheduler-backed job framework.
@@ -215,6 +222,42 @@ was frozen at whatever it showed at boot time, is now genuinely live
 too — provider, connection status, latency, and quality all update in
 real time.
 
+## Phase 5.2, Milestone 5.2.3 — what was built
+
+The closing milestone: testing, documentation, and a whole-codebase
+review. Three concrete outcomes, plus the doc pass:
+
+- **A contract test for the one endpoint that matters.**
+  `backend/tests/test_dashboard.py` — `/api/dashboard` (the only route
+  `ApiProvider` actually polls) had no test despite being the whole point
+  of the phase. It now asserts the exact shape `hydrateFromSnapshot()`
+  depends on, that the demo fleet seeds on first read, and that values
+  stay clamped to `[0,100]` while genuinely drifting per read. Suite is
+  12 tests (was 9), `ruff` clean.
+- **A real DRY fix the review surfaced.** `ApiProvider`,
+  `connection-manager.js`, and `backend-health.js` had each re-implemented
+  the same fetch-with-abort-timeout and the same "derive a sibling
+  endpoint from the dashboard URL" logic — genuine triplication.
+  Extracted both into `js/core/http.js` (`HLM.http.fetchWithTimeout` /
+  `HLM.http.deriveEndpoint`), one implementation shared by all three.
+  Deliberately *not* pushed into the two plugin fetchers
+  (`minecraft-plugin.js`, `core-monitoring.js`): a plugin depends on the
+  SDK surface, not core internals, so their self-contained fetch is the
+  price of the isolation boundary, not an oversight.
+- **A version-pin correction.** `requirements.txt` pinned
+  `psutil>=6.0,<7.0`, but the whole integration was verified against
+  7.2.2 — a fresh install would have pulled an untested 6.x. Widened to
+  `>=6.0,<8.0`.
+
+Re-verified live after the refactor: the full kill→fallback→restart→
+reconnect cycle still works end-to-end (fell back to 22 simulated devices,
+recovered to 3 live ones, heartbeat stopped itself on recovery, zero page
+reloads), and the app boots with no console errors on the shared
+`http.js`. The architectural claim the phase set out to prove holds:
+`engine.js`, the health/alert/event engines, the Store, and every widget
+are unchanged between simulated and real data — the only new code is the
+adapter, the provider, and the resilience layer.
+
 ## Known limitations (honesty over polish)
 
 - The backend's `/api/dashboard` data is synthetic demo values, not a
@@ -239,11 +282,19 @@ real time.
 
 ## Immediate next
 
-**Milestone 5.2.3** (same phase, final): testing (backend startup,
-frontend startup, REST communication, Store sync, connection loss,
-fallback, reconnect, plugin loading, API validation, error handling —
-much of this already verified live, this milestone is about codifying it
-as committed, repeatable tests), a full documentation pass, and a final
-architecture review (tight coupling, duplicate logic, leaking
-abstractions, performance, maintainability, scaling). See
-`docs/roadmap.md`.
+Phase 5.2 is complete; there is no in-flight milestone. The next planned
+work (see `docs/roadmap.md`) is one of two independent tracks:
+
+- **Phase 4.6 — Visualization Framework**: charts, topology, treemap,
+  historical graphs backed by the timestamped history buffers the engine
+  already maintains. Pure UI/rendering on data that already exists; no
+  engine changes expected.
+- **Phase 5.2+/6 — real data behind the backend**: replace
+  `/api/dashboard`'s synthetic demo devices with real collectors
+  (Docker/Proxmox/etc.), and start filling the documented backend seams
+  (history storage, authentication). This is where "simulated by default"
+  finally has a real alternative to point at.
+
+Neither is started. The architecture is at a clean stopping point: the
+frontend↔backend path is proven and resilient, and both sides still run
+independently.

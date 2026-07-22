@@ -55,15 +55,8 @@
     }
 
     async _fetchOnce(){
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-      try{
-        const res = await fetch(this.url, { cache: "no-store", signal: controller.signal });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-      } finally {
-        clearTimeout(timer);
-      }
+      const res = await HLM.http.fetchWithTimeout(this.url, { timeoutMs: this.timeoutMs });
+      return res.json();
     }
 
     /** Turns { devices: {...} } into hydrated devices, keyed by id — never

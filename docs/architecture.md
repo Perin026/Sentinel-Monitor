@@ -308,6 +308,41 @@ fleet size can differ) — one of which (`mountDeviceGroupView`) had never
 removed a stale device card once its device disappeared from a snapshot,
 because no snapshot's device set had ever shrunk before this phase.
 
+### How the two sides communicate
+
+The frontend is an HTTP client of the backend — nothing more. There is no
+shared code, no build-time link, no generated client; the contract is
+`docs/api-contract.md` and the wire format is plain JSON. Three
+independent frontend consumers each own one concern and one endpoint:
+
+| Frontend module | Endpoint | Cadence | Purpose |
+|---|---|---|---|
+| `ApiProvider` (`data-provider.js`) | `GET /api/dashboard` | every `refreshMs` (2.5s) | the device snapshot that drives the whole UI |
+| `backend-health.js` | `GET /api/system` | every 8s | the backend's own self-monitoring, for Settings |
+| `connection-manager.js` | `GET /health` | only while fallen back | cheap liveness probe to detect recovery |
+
+A single dashboard round trip: `ApiProvider._poll()` →
+`HLM.http.fetchWithTimeout('/api/dashboard')` → FastAPI route
+(`api/routes/dashboard.py`) → `DashboardService.get_snapshot()` (reads the
+`Device` table, applies a tiny random walk, serializes via the
+`DashboardResponse` pydantic schema) → JSON on the wire →
+`ApiProvider._hydrateSnapshot()` calls
+`HLM.deviceModel.hydrateFromSnapshot()` per device (merging raw numbers
+with the plugin-registered type definition) → `onTick` → `runPipeline()` →
+Store → widgets. The backend deliberately knows *nothing* about
+thresholds, units, labels, or icons — it sends identity + raw sensor
+numbers only, and the frontend's plugin layer supplies the rest. That
+split is the whole point: it's what lets a device type be defined once, in
+one plugin, and work identically whether its values come from the
+simulator or the backend.
+
+All three consumers share their HTTP plumbing through **`js/core/http.js`**
+(`HLM.http.fetchWithTimeout`, `HLM.http.deriveEndpoint`) rather than
+re-implementing abort-timeout and URL-derivation three times. Everything
+that reaches the backend over HTTP from the frontend's *own* code goes
+through that one module; the only fetches that don't are inside sandboxed
+plugins, which by design depend on the SDK surface, not core internals.
+
 ### Automatic fallback and reconnect
 
 `engine.js` already had a fallback threshold from Phase 3 (three

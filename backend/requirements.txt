@@ -27,8 +27,11 @@ structlog>=24.4,<25.0
 # --- Self-monitoring (Phase 5.2) ---
 # "Sentinel should monitor itself before monitoring anything else" — CPU/
 # memory/uptime for /api/system. psutil is the standard, cross-platform
-# choice for exactly this; nothing homegrown needed.
-psutil>=6.0,<7.0
+# choice for exactly this; nothing homegrown needed. Range spans 6.x–7.x:
+# the calls used here (Process.cpu_percent/memory_percent, warm-up
+# cpu_percent(interval=None)) are unchanged across both majors, and the
+# integration was actually verified against 7.x.
+psutil>=6.0,<8.0
 
 # --- Testing ---
 pytest>=8.3,<9.0

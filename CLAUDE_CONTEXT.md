@@ -207,6 +207,17 @@ directly, map them through a lookup at render time instead (see
   process mid-session**, not by reading the fallback code and assuming
   it works — see `PROJECT_STATE.md`'s Milestone 5.2.2 section. Do the
   same if you touch this path.
+- **All frontend→backend HTTP from core code goes through `js/core/http.js`
+  (`HLM.http.fetchWithTimeout` / `deriveEndpoint`).** The three consumers
+  (`ApiProvider`, `backend-health.js`, `connection-manager.js`) share one
+  fetch-with-timeout and one URL-derivation implementation — added in
+  Milestone 5.2.3 after the review found the logic copy-pasted three
+  times. If you add a fourth core-side call to the backend, use it; don't
+  re-roll `AbortController` + `setTimeout(abort)`. The one exception is
+  plugins (`minecraft-plugin.js`, `core-monitoring.js`): they keep their
+  own fetch on purpose, because a plugin depends on the SDK surface, not
+  core internals — pulling them into `HLM.http` would weaken the isolation
+  boundary. Don't "fix" that duplication.
 
 ## Testing
 

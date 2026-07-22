@@ -34,7 +34,7 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 
 ## Project Status
 
-> **Alpha.** The UI framework, monitoring engine, and plugin architecture are complete and tested. There's a real (opt-in) live-monitoring path — two devices are genuinely polled over the network — and, as of Phase 5.2, a working (if not yet default) path to a real backend: `ApiProvider` now renders genuine Sentinel Core Server data through the frontend's completely unmodified pipeline. Most of the demo fleet is still **simulated** by default. See the [Roadmap](#roadmap) for what's next.
+> **Alpha.** The UI framework, monitoring engine, and plugin architecture are complete and tested. There's a real (opt-in) live-monitoring path — two devices are genuinely polled over the network — and, as of Phase 5.2 (now complete), a working (if not yet default) path to a real backend: `ApiProvider` renders genuine Sentinel Core Server data through the frontend's completely unmodified pipeline, and if the backend goes away mid-session the frontend falls back to simulation and reconnects automatically, with zero page reload. Most of the demo fleet is still **simulated** by default. See the [Roadmap](#roadmap) for what's next.
 
 ## Features
 
@@ -48,11 +48,11 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
 - Zero build step — open `index.html` and it runs
 - **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. See [`backend/README.md`](backend/README.md)
-- **Frontend ↔ backend integration** (Phase 5.2, in progress): `ApiProvider` genuinely fetches and renders real backend data through the *same* Store, health engine, and widgets the simulator uses, completely unmodified — still opt-in (`"simulation"` stays the default). If the backend goes away mid-session, the frontend automatically falls back to simulation and automatically reconnects once it's back, with zero page reload — verified live, not just built. Settings also now shows the backend's own health (CPU/memory/uptime/database/scheduler), because "Sentinel should monitor itself before monitoring anything else." See [`docs/api-contract.md`](docs/api-contract.md)
+- **Frontend ↔ backend integration** (Phase 5.2, complete): `ApiProvider` genuinely fetches and renders real backend data through the *same* Store, health engine, and widgets the simulator uses, completely unmodified — still opt-in (`"simulation"` stays the default). If the backend goes away mid-session, the frontend automatically falls back to simulation and automatically reconnects once it's back, with zero page reload — verified live, not just built. Settings also now shows the backend's own health (CPU/memory/uptime/database/scheduler), because "Sentinel should monitor itself before monitoring anything else." See [`docs/api-contract.md`](docs/api-contract.md) and [how the two sides communicate](docs/architecture.md#how-the-frontend-and-backend-communicate)
 
 **Not yet implemented** (see [Roadmap](#roadmap)):
 - Charts, topology maps, and historical graphs (Phase 4.6)
-- Automatic simulation fallback / reconnect when a real backend goes away (Phase 5.2, Milestone 5.2.2), and real collectors/authentication/history behind the backend (Phase 5.2+/6+)
+- Real collectors/authentication/history *behind* the backend — the backend serves synthetic demo devices today; real Docker/Proxmox/etc. collectors are Phase 5.2+/6+
 - Full third-party integrations for the other five example plugins (Phase 6) — RCON-level Minecraft control, real Proxmox/Docker/Ollama/Home Assistant/Pi-hole APIs
 - Authentication, multi-user support, notification delivery (Discord/ntfy/email)
 
@@ -171,7 +171,7 @@ Plugins can register device types, widgets, pages, commands, data providers, not
 | 4.5 | Full Visual QA & UI Stabilization | ✅ Complete |
 | 4.6 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
 | 5.1 | Sentinel Core Server Foundation (`backend/`) | ✅ Complete |
-| 5.2 | Frontend ↔ Backend Integration (real `ApiProvider`, Connection Manager, fallback) | 🔄 In progress |
+| 5.2 | Frontend ↔ Backend Integration (real `ApiProvider`, Connection Manager, fallback) | ✅ Complete |
 | 5.2+/6+ | Real collectors, authentication, history behind the backend | ⏳ Planned |
 | 6 | Official Plugins (Proxmox, Docker, Ollama, Minecraft, Home Assistant, Pi-hole, OPNsense) | ⏳ Planned |
 | 7 | Historical Analytics | ⏳ Planned |

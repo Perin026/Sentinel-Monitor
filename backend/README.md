@@ -126,8 +126,9 @@ extension point) and a `PluginManager` that isolates a failing plugin's
 | App factory, DI, middleware, structured logging, global exception handling | Real plugins (collectors, notification providers) — `app/plugins/manager.py`'s `load_all()` loads none by default |
 | Config system (env/`.env`/YAML/JSON/defaults, validated) | Authentication — `app/services/authentication_service.py` raises `NotImplementedError` on purpose |
 | Async SQLAlchemy engine, sessions, repository pattern, Alembic migrations | Historical data storage — `app/services/history_service.py` raises `NotImplementedError` on purpose |
-| `/api/system`, `/api/health`, `/api/version`, `/api/plugins`, `/api/settings` | Monitoring data over WebSocket — the transport exists (`app/websocket/`), nothing streams over it yet |
-| WebSocket connect/disconnect/broadcast/heartbeat | Real collectors — `app/collectors/base.py` is the contract, no implementations ship |
+| `/api/system` (real self-monitoring — process CPU/memory via `psutil`, uptime, live DB/scheduler status), `/api/health`, `/api/version`, `/api/plugins`, `/api/settings` | Monitoring data over WebSocket — the transport exists (`app/websocket/`), nothing streams over it yet |
+| `/api/dashboard` — the snapshot the frontend's `ApiProvider` polls (Phase 5.2). Serves a few **synthetic** demo devices whose values drift slightly per read | Real collectors feeding `/api/dashboard` — `app/collectors/base.py` is the contract, no implementations ship; the demo devices are placeholders, not real hosts |
+| WebSocket connect/disconnect/broadcast/heartbeat | Authentication on any endpoint — `app/websocket/auth.py` / `authentication_service.py` are seams |
 | APScheduler-backed job framework | Actual scheduled jobs — `app/scheduler/jobs.py`'s `register_jobs()` registers none by default |
 
 Raising `NotImplementedError` rather than silently returning empty data

@@ -34,11 +34,43 @@ cp .env.example .env
 python main.py                                    # http://localhost:8000/docs
 ```
 
-Nothing on the frontend currently points at it — `HLM.config.APP.dataProvider`
-stays `"simulation"` until a future phase wires `ApiProvider`/
-`WebSocketProvider` to real endpoints (see
-`docs/architecture.md`'s "Sentinel Core Server" section for why that's a
-deliberate, not accidental, gap).
+### Pointing the frontend at the backend (Phase 5.2)
+
+The default is still `HLM.config.APP.dataProvider: "simulation"` — the
+frontend never *requires* the backend. But `ApiProvider` is real now, so
+you can connect the two. Set two config values in `js/core/config.js`
+(or live from the console for a quick try):
+
+```javascript
+HLM.config.APP.dataProvider = "api";
+HLM.config.APP.dataUrl = "http://localhost:8000/api/dashboard";
+```
+
+then reload. Within a couple of polls the Overview switches to the
+backend's demo fleet, and Settings → "Data Source" / "Backend Health"
+go live. Kill the backend and the frontend falls back to simulation on
+its own after three failed polls; restart it and the frontend reconnects
+automatically — no reload (see
+[`docs/architecture.md`](architecture.md#automatic-fallback-and-reconnect)).
+
+**CORS gotcha.** The backend only allows the origins in its
+`cors_origins` setting (default `http://localhost:8080` and
+`http://127.0.0.1:8080`). If you serve the frontend from any *other*
+port, the browser will block the cross-origin `fetch` and you'll see the
+frontend sit in simulation with `Failed to fetch` in the console. Either
+serve the frontend on `8080`, or add your port to the allowlist when
+launching the backend:
+
+```bash
+# serve the frontend on, say, 8096? then tell the backend to allow it:
+SENTINEL_CORS_ORIGINS='["http://localhost:8096"]' python main.py
+```
+
+All three frontend→backend consumers (`ApiProvider`,
+`js/engine/backend-health.js`, `js/engine/connection-manager.js`) share
+their HTTP plumbing through `js/core/http.js` — if you're adding a fourth
+call to the backend from core code, use `HLM.http.fetchWithTimeout`
+rather than a raw `fetch`.
 
 ## Project Layout
 

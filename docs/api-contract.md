@@ -23,7 +23,8 @@ serialize."
 | Events | **not served — derived on the frontend** | Same reasoning as Alerts; `js/engine/event-engine.js` is unchanged. |
 | Plugins | `GET /api/plugins` | The **backend's own** plugin registry (`backend/app/plugins/`) — collectors, notification providers, etc. Entirely separate from the frontend's `HLM.pluginManager`, which has no HTTP surface and never will; it's client-side by design. |
 | Settings | `GET /api/settings` | The **backend's own** configuration (secret-stripped). Unrelated to the frontend's `HLM.config`, which stays a local JS object. |
-| Health | `GET /health` (liveness), `GET /api/health` (readiness) | Liveness: "is the process responding, no dependency checks." Readiness: database/scheduler/websocket/plugins, each individually reported. |
+| Health | `GET /health` (liveness), `GET /api/health` (readiness) | Liveness: "is the process responding, no dependency checks." Readiness: database/scheduler/websocket/plugins, each individually reported. `js/engine/connection-manager.js`'s reconnect heartbeat probes `/health` specifically (cheap, no dependency checks) — it only needs "is it up", not real data. |
+| System | `GET /api/system` | The backend's **self-monitoring** (Phase 5.2): real process CPU%/memory% (`psutil`), uptime, live DB/scheduler status, registry counts. Polled independently by `js/engine/backend-health.js` and shown in Settings → "Backend Health" — runs even while the frontend is fully simulated. |
 | History | **not implemented** | `HistoryService` raises `NotImplementedError` on purpose (see `backend/README.md`). Explicitly out of scope for this phase. |
 | Version | `GET /api/version` | Backend's own app/API version — distinct from the frontend's `HLM.config.APP.version`. |
 | Errors | every non-2xx response | One envelope shape (`ErrorResponse`, `backend/app/schemas/common.py`) regardless of cause — see `backend/app/core/exceptions.py`. |

@@ -100,7 +100,7 @@ collectors/notifications/authentication/history are documented
 See [`backend/README.md`](../backend/README.md) and
 [`docs/architecture.md`](architecture.md#sentinel-core-server-phase-51).
 
-#### 🔄 Phase 5.2 — Frontend ↔ Backend Integration (in progress)
+#### ✅ Phase 5.2 — Frontend ↔ Backend Integration
 Architectural validation, explicitly not new features: prove that
 `ApiProvider` and `SimulationProvider` are genuinely interchangeable by
 actually connecting them.
@@ -110,11 +110,19 @@ actually connecting them.
   reconnect, backend self-monitoring surfaced in the UI) ✅ — verified
   live by killing and restarting the backend mid-session and watching
   the frontend recover with zero page reload
-- Milestone 5.2.3 (testing, documentation, final architecture review) —
-  remaining
+- Milestone 5.2.3 (testing, documentation, final architecture review) ✅ —
+  added a `/api/dashboard` contract test, extracted the triplicated
+  frontend HTTP plumbing into `js/core/http.js`, corrected the `psutil`
+  version pin, and documented how the two sides communicate
+  (`docs/architecture.md`). The full fallback→reconnect cycle was
+  re-verified live after the refactor.
 
-See `CHANGELOG.md`'s `[Unreleased]` section for full detail on both
-completed milestones.
+The claim this phase set out to prove held: `engine.js`, the health/alert/
+event engines, the Store, and every widget are byte-for-byte the same
+whether data comes from the simulator or a real backend — the only new
+code is the adapter (`hydrateFromSnapshot`), the provider (`ApiProvider`),
+and the resilience layer around them (connection manager, backend health).
+See `CHANGELOG.md`'s `[Unreleased]` section for full detail.
 
 ### Phase 6 — Official Plugins
 Real integrations, replacing today's demonstration plugins:

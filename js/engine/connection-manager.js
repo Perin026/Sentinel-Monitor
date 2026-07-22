@@ -38,10 +38,7 @@
     // backend/app/core/application.py). Falls back to the dashboard URL
     // itself if it doesn't match the expected shape, rather than throwing.
     try{
-      const url = new URL(dashboardUrl, window.location.href);
-      url.pathname = "/health";
-      url.search = "";
-      return url.toString();
+      return HLM.http.deriveEndpoint(dashboardUrl, "/health");
     } catch(err){
       return dashboardUrl;
     }
@@ -89,14 +86,7 @@
         if(!this._heartbeatActive) return;
         const start = performance.now();
         try{
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 4000);
-          try{
-            const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-            if(!res.ok) throw new Error(`HTTP ${res.status}`);
-          } finally {
-            clearTimeout(timer);
-          }
+          await HLM.http.fetchWithTimeout(url); // liveness only — body ignored
           const latencyMs = Math.round(performance.now() - start);
           this.recordSuccess(latencyMs);
           this.stopHeartbeat();

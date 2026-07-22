@@ -92,6 +92,39 @@ backend and watched it reconnect automatically (3 real devices,
   denominator itself (live device count) can now change at runtime,
   which was never true before `ApiProvider` existed
 
+**Milestone 5.2.3 — testing, documentation, final architecture review.**
+The closing milestone: verify the whole integration through tests, bring
+every doc in line, and review the two-side codebase as a whole. The full
+fallback→reconnect cycle was re-exercised live (kill backend → fall back
+to 22-device simulation → restart backend → auto-reconnect to 3 live
+devices, zero page reload) after the refactor below, confirming nothing
+regressed.
+
+- Backend: added `tests/test_dashboard.py` — the `/api/dashboard` route
+  (the one endpoint `ApiProvider` actually polls) had no test despite
+  being the whole point of the phase. Asserts the exact contract shape
+  `hydrateFromSnapshot()` depends on, that the demo fleet seeds on first
+  read, and that values stay clamped to `[0,100]` while genuinely drifting
+  per read. Suite is now 12 tests (was 9), `ruff` clean.
+- Refactor (found by the review — genuine triplication): `ApiProvider`,
+  `connection-manager.js`, and `backend-health.js` each re-implemented the
+  same fetch-with-abort-timeout and the same "derive a sibling endpoint
+  from the dashboard URL" logic. Extracted both into `js/core/http.js`
+  (`HLM.http.fetchWithTimeout` / `HLM.http.deriveEndpoint`) — one
+  implementation, three callers. Deliberately *not* adopted by the two
+  plugin fetchers (`minecraft-plugin.js`, `core-monitoring.js`): a plugin
+  depends on the SDK surface, not core internals, and their self-contained
+  fetch is the price of that isolation boundary.
+- Fix (found by the review): `requirements.txt` pinned `psutil>=6.0,<7.0`,
+  but the integration was actually verified against 7.2.2 — a fresh
+  install would have pulled an untested 6.x. Widened to `>=6.0,<8.0`
+  (the calls used are unchanged across both majors).
+- Docs: `docs/architecture.md` gained a "How the frontend and backend
+  communicate" section (the request/response walk, who owns HTTP, the
+  fallback/reconnect state machine); `docs/developer-guide.md` documents
+  running the two sides together and the CORS gotcha; `backend/README.md`
+  and `docs/api-contract.md` updated; roadmap marks Phase 5.2 complete.
+
 ---
 
 ## [0.6.0-alpha] — Phase 5.1: Sentinel Core Server Foundation

@@ -23,10 +23,7 @@
 
   function systemUrlFor(dashboardUrl){
     try{
-      const url = new URL(dashboardUrl, window.location.href);
-      url.pathname = "/api/system";
-      url.search = "";
-      return url.toString();
+      return HLM.http.deriveEndpoint(dashboardUrl, "/api/system");
     } catch(err){
       return null;
     }
@@ -34,17 +31,11 @@
 
   async function poll(url, intervalMs){
     if(!active) return;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
     try{
-      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      HLM.store.set({ backendHealth: data });
+      const res = await HLM.http.fetchWithTimeout(url);
+      HLM.store.set({ backendHealth: await res.json() });
     } catch(err){
       HLM.store.set({ backendHealth: null }); // honestly "unknown/unreachable", not stale data
-    } finally {
-      clearTimeout(timeoutId);
     }
     if(active) timer = setTimeout(() => poll(url, intervalMs), intervalMs);
   }
