@@ -17,6 +17,7 @@ from app.config.settings import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import register_middleware
+from app.core.runtime import mark_started
 from app.database.init_db import init_db
 from app.database.session import dispose_engine, init_engine
 from app.plugins.manager import plugin_manager
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings)
     logger.info("startup.begin", app=settings.app_name, version=settings.app_version, environment=settings.environment)
+    mark_started()
 
     init_engine(settings)
     await init_db(settings)

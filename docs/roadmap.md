@@ -103,12 +103,18 @@ See [`backend/README.md`](../backend/README.md) and
 #### 🔄 Phase 5.2 — Frontend ↔ Backend Integration (in progress)
 Architectural validation, explicitly not new features: prove that
 `ApiProvider` and `SimulationProvider` are genuinely interchangeable by
-actually connecting them. Milestone 5.2.1 (API contract, real
-`ApiProvider`, Store integration via `hydrateFromSnapshot()`) is
-complete — see `CHANGELOG.md`'s `[Unreleased]` section and
-`docs/api-contract.md`. Remaining: a Connection Manager + automatic
-simulation fallback (5.2.2), then testing/documentation/final review
-(5.2.3).
+actually connecting them.
+- Milestone 5.2.1 (API contract, real `ApiProvider`, Store integration via
+  `hydrateFromSnapshot()`) ✅ — see `docs/api-contract.md`
+- Milestone 5.2.2 (Connection Manager, automatic simulation fallback +
+  reconnect, backend self-monitoring surfaced in the UI) ✅ — verified
+  live by killing and restarting the backend mid-session and watching
+  the frontend recover with zero page reload
+- Milestone 5.2.3 (testing, documentation, final architecture review) —
+  remaining
+
+See `CHANGELOG.md`'s `[Unreleased]` section for full detail on both
+completed milestones.
 
 ### Phase 6 — Official Plugins
 Real integrations, replacing today's demonstration plugins:

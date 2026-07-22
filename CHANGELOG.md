@@ -54,6 +54,44 @@ reviewed:**
   the moment `ApiProvider`'s fleet can differ. Fixed: cards are pruned
   when their device is no longer present in the current tick.
 
+**Milestone 5.2.2 — Connection Manager, automatic simulation fallback,
+backend self-monitoring.** Verified live end-to-end: killed the backend
+mid-session and watched the frontend fall back to simulation
+automatically (22 devices, `connection: "simulated"`); restarted the
+backend and watched it reconnect automatically (3 real devices,
+`connection: "live"`) — all without a page reload, exactly as required.
+
+- `js/engine/connection-manager.js` (new): tracks consecutive success/
+  failure and connection quality (good/fair/poor, derived from measured
+  latency) from `ApiProvider`'s own request timings; runs an independent
+  heartbeat against `/health` (the cheap liveness probe) *only* while a
+  fallback is active — the piece that was actually missing before, since
+  the failing `ApiProvider` gets stopped once fallback happens and
+  nothing was left polling to notice a recovery
+- `engine.js`: tracks "preferred" vs. "currently active" provider
+  separately, so an internal fallback switch never overwrites what the
+  user/config actually asked for; `switchProvider()` gained a `manual`
+  flag distinguishing an explicit switch from an internal one
+- `js/engine/backend-health.js` (new): independently polls the extended
+  `GET /api/system` (see below) and publishes to the store — runs
+  unconditionally, not gated on `dataProvider` being `"api"`, since
+  knowing the backend's condition is useful even while fully simulated.
+  "Sentinel should monitor itself before monitoring anything else."
+- Backend `/api/system` now reports real self-monitoring data: process
+  CPU%/memory% (`psutil`, with the standard "warm-up call" fix for
+  `cpu_percent()`'s well-known first-call-always-0.0 behavior), uptime,
+  live database health, scheduler status, and an honest `collector_count`
+  of 0 (the registry exists; Phase 5.2 ships no real collectors)
+- Settings gained two live widgets: "Data Source" (provider, connection
+  status, live latency + quality — was previously frozen at boot-time
+  values) and "Backend Health" (the new self-monitoring fields,
+  gracefully showing "Backend unreachable" rather than stale/broken data
+  when there's nothing to poll)
+- `metric.js`'s `createProgressBar().update()` gained an optional third
+  argument to update its `max` after creation — needed because the
+  denominator itself (live device count) can now change at runtime,
+  which was never true before `ApiProvider` existed
+
 ---
 
 ## [0.6.0-alpha] — Phase 5.1: Sentinel Core Server Foundation

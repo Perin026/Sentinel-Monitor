@@ -87,9 +87,12 @@
     async _poll(){
       let lastError = null;
       for(let attempt = 0; attempt <= this.maxRetries; attempt++){
+        const attemptStart = performance.now();
         try{
           const raw = await this._fetchOnce();
+          const latencyMs = Math.round(performance.now() - attemptStart);
           const devices = this._hydrateSnapshot(raw);
+          HLM.connectionManager?.recordSuccess(latencyMs);
           this.onStatus("live");
           this.onTick({ devices, timestamp: Date.now() });
           lastError = null;
@@ -101,6 +104,7 @@
       }
       if(lastError){
         console.error(`[ApiProvider] Poll failed after ${this.maxRetries + 1} attempt(s):`, lastError);
+        HLM.connectionManager?.recordFailure();
         this.onStatus("reconnecting");
       }
       if(!this._stopped){

@@ -186,6 +186,27 @@ directly, map them through a lookup at render time instead (see
   device-card-pruning bug above only fully proved itself fixed by
   switching back to simulation afterward and confirming the cards
   correctly reappeared (see `PROJECT_STATE.md`).
+- **"Preferred" and "currently active" provider are tracked separately in
+  `engine.js`, on purpose — don't collapse them back into one variable.**
+  An internal fallback switch (backend went down) and an internal
+  recovery switch (backend came back) both call `switchProvider(name,
+  { manual: false })` specifically so they never overwrite what the user
+  actually asked for. If you add a new place that calls
+  `switchProvider()`, ask whether it's a deliberate user choice
+  (`manual: true`, the default — updates "preferred") or an automatic
+  system reaction (`manual: false`) before wiring it up.
+- **The reconnect heartbeat (`connection-manager.js`) only runs while a
+  fallback is active — it is not a permanent poller.** It starts itself
+  from `engine.js`'s fallback path and stops itself the moment it
+  succeeds. If you're debugging "why isn't it reconnecting," check
+  `HLM.connectionManager.isHeartbeatActive` before assuming the heartbeat
+  logic itself is broken — most likely cause is `preferredProviderName`
+  having been left `"simulation"` (a manual switch), which correctly
+  means there's nothing to reconnect to.
+- **This was verified by actually killing and restarting the backend
+  process mid-session**, not by reading the fallback code and assuming
+  it works — see `PROJECT_STATE.md`'s Milestone 5.2.2 section. Do the
+  same if you touch this path.
 
 ## Testing
 

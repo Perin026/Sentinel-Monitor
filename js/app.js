@@ -366,12 +366,28 @@
     const grid = qs("#settingsGrid");
     if(!grid) return;
 
-    const source = HLM.ui.createWidget({ title: "Data Source", icon: "workflow", collapsible: false });
+    // "unknown" gives createWidget() a status badge element to update later —
+    // without an initial status, no badge is ever created (see widget.js).
+    const source = HLM.ui.createWidget({ title: "Data Source", icon: "workflow", status: "unknown", collapsible: false });
     source.el.classList.add("span-4");
-    source.setContent(el("div", {}, [
-      el("div", { class: "counter size-md" }, [HLM.config.APP.dataProvider === "simulation" ? "Simulation" : HLM.config.APP.dataProvider]),
-      el("div", { class: "counter-label" }, [HLM.config.APP.dataUrl || "No external endpoint configured — set HLM.config.APP.dataUrl and dataProvider to go live."]),
-    ]));
+    const sourceValueEl = el("div", { class: "counter size-md" }, ["—"]);
+    const sourceDetailEl = el("div", { class: "counter-label" }, ["—"]);
+    source.setContent(el("div", {}, [sourceValueEl, sourceDetailEl]));
+
+    const CONNECTION_LABEL = { simulated: "Simulation", live: "Live (API)", reconnecting: "Reconnecting…" };
+    const CONNECTION_STATUS = { simulated: "unknown", live: "ok", reconnecting: "warn" };
+
+    function renderDataSource(s){
+      sourceValueEl.textContent = CONNECTION_LABEL[s.connection] || s.connection;
+      source.setStatus(CONNECTION_STATUS[s.connection] || "unknown");
+      if(s.connection === "live" && s.connectionLatencyMs != null){
+        sourceDetailEl.textContent = `${HLM.config.APP.dataUrl} · ${s.connectionLatencyMs}ms (${s.connectionQuality})`;
+      } else {
+        sourceDetailEl.textContent = HLM.config.APP.dataUrl || "No external endpoint configured — set HLM.config.APP.dataUrl and dataProvider to go live.";
+      }
+    }
+    HLM.store.subscribe(renderDataSource, s => `${s.connection}|${s.connectionLatencyMs}|${s.connectionQuality}`);
+    renderDataSource(HLM.store.get());
 
     const refresh = HLM.ui.createWidget({ title: "Refresh Interval", icon: "refresh", collapsible: false });
     refresh.el.classList.add("span-4");
@@ -397,9 +413,60 @@
     renderFleetSize(HLM.store.get());
 
     grid.append(source.el, refresh.el, fleet.el);
+    mountBackendHealthPanel(grid);
     mountMonitoringPanel(grid);
     mountPluginsPanel(grid);
     mountPluginSettingsPanels(grid);
+  }
+
+  // ---------------------------------------------------------------
+  // Phase 5.2 — Backend Health panel: "Sentinel should monitor itself
+  // before monitoring anything else." Reads js/engine/backend-health.js's
+  // independent poll of GET /api/system — not gated on dataProvider being
+  // "api", since knowing the backend's condition is useful even while
+  // fully on SimulationProvider. `backendHealth: null` (unreachable, or
+  // never configured) is a normal, expected state, not an error to hide.
+  // ---------------------------------------------------------------
+
+  function backendHealthRow(label, value, status){
+    return el("div", { class: "device-card-sensor status-ok" }, [
+      el("span", { class: "sensor-label" }, [label]),
+      el("span", { class: "sensor-value" }, [status ? el("span", { class: `status-badge ${status}`, style: "margin-right:6px;" }, [value]) : value]),
+    ]);
+  }
+
+  function mountBackendHealthPanel(grid){
+    const widget = HLM.ui.createWidget({ title: "Backend Health", subtitle: "Sentinel Core Server self-monitoring", icon: "shield", status: "unknown", collapsible: false });
+    widget.el.classList.add("span-12");
+    const body = el("div", { class: "device-card-detail-inner", style: "padding:0; grid-template-columns:1fr;" });
+    widget.setContent(body);
+    grid.append(widget.el);
+
+    function render(){
+      const health = HLM.store.get().backendHealth;
+      body.innerHTML = "";
+      if(!health){
+        widget.setStatus("unknown");
+        body.append(el("div", { class: "empty-state compact", style: "grid-column:1/-1;" }, [
+          el("h3", {}, ["Backend unreachable"]),
+          el("p", {}, [`No response from ${HLM.config.APP.dataUrl || "(no endpoint configured)"}`]),
+        ]));
+        return;
+      }
+      widget.setStatus(health.database_healthy && health.scheduler_running ? "ok" : "warn");
+      body.append(
+        backendHealthRow("CPU", `${health.cpu_percent.toFixed(1)}%`),
+        backendHealthRow("Memory", `${health.memory_percent.toFixed(1)}%`),
+        backendHealthRow("Uptime", formatDuration(health.uptime_seconds * 1000)),
+        backendHealthRow("Database", health.database_healthy ? "up" : "down", health.database_healthy ? "ok" : "critical"),
+        backendHealthRow("Scheduler", health.scheduler_running ? "running" : "stopped", health.scheduler_running ? "ok" : "critical"),
+        backendHealthRow("Plugins", String(health.plugins_loaded)),
+        backendHealthRow("Collectors", String(health.collector_count)),
+        backendHealthRow("WebSocket clients", String(health.connected_websocket_clients)),
+      );
+    }
+    HLM.store.subscribe(render, s => s.backendHealth);
+    render();
   }
 
   // ---------------------------------------------------------------

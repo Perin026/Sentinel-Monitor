@@ -52,6 +52,13 @@
     connection: "simulated",   // "simulated" | "live" | "reconnecting"
     bootTime: Date.now(),
 
+    // connection quality (Phase 5.2) — written by js/engine/connection-manager.js,
+    // meaningful only while connection is "live"/"reconnecting" (ApiProvider active
+    // or attempting to be)
+    connectionLatencyMs: null,     // number | null
+    connectionQuality: "unknown",   // "good" | "fair" | "poor" | "unknown"
+    backendHealth: null,             // SystemInfoResponse | null — see js/engine/backend-health.js
+
     // notifications / toasts (Phase 2 UI slices)
     notifications: [],         // { id, title, message, level, read, timestamp }
     toasts: [],

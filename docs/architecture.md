@@ -283,8 +283,7 @@ duplicating it here.
 `ApiProvider` is real now — see `docs/api-contract.md` for the wire
 contract and `PROJECT_STATE.md` for how it was verified. The default is
 still `"simulation"` (`HLM.config.APP.dataProvider`); this phase proves
-the *path* works, not that it should be the default yet — that's what
-Milestone 5.2.2's automatic fallback is for.
+the *path* works, not that it should be the default yet.
 
 The mechanism is deliberately a thin adapter, not a parallel pipeline:
 `ApiProvider` fetches `GET /api/dashboard`, and
@@ -299,8 +298,8 @@ claim Phase 3 made when `DataProvider` was designed as a swappable
 interface, now actually exercised rather than merely structurally
 plausible.
 
-Two real bugs surfaced only by actually connecting the two sides (not by
-review) — see `CHANGELOG.md`'s `[Unreleased]` entry and
+Several real bugs surfaced only by actually connecting the two sides (not
+by review) — see `CHANGELOG.md`'s `[Unreleased]` entry and
 `PROJECT_STATE.md` for details: a backend session that silently never
 committed writes, and two frontend places that assumed a device count
 never differs from `HLM.config.DEVICES.length` (true for
@@ -308,6 +307,42 @@ never differs from `HLM.config.DEVICES.length` (true for
 fleet size can differ) — one of which (`mountDeviceGroupView`) had never
 removed a stale device card once its device disappeared from a snapshot,
 because no snapshot's device set had ever shrunk before this phase.
+
+### Automatic fallback and reconnect
+
+`engine.js` already had a fallback threshold from Phase 3 (three
+consecutive failed polls → switch to simulation), but it only ever went
+one direction: nothing was left running that could notice the backend
+come back, because the failing `ApiProvider` gets `.stop()`ped the moment
+fallback happens. `js/engine/connection-manager.js` closes that gap with
+an independent heartbeat against `/health` (the cheap liveness probe,
+not `/api/dashboard`) that starts *only* while a fallback is active and
+stops itself the instant it succeeds.
+
+`engine.js` tracks "preferred" and "currently active" provider
+separately so this stays correct under a subtlety that matters: an
+*internal* fallback switch must never overwrite what the user (or
+config) actually asked for, or a recovered backend would have nothing to
+reconnect *to*. `switchProvider(name, { manual })` — `manual: true`
+(the default, for any explicit call) updates what's preferred and cancels
+any pending heartbeat; `manual: false` (only used by the fallback/
+recovery paths themselves) does neither.
+
+Verified live end-to-end, not just by reading the code: the backend
+process was killed mid-session and the frontend fell back to simulation
+automatically; it was then restarted and the frontend reconnected
+automatically — both with zero page reload. See `PROJECT_STATE.md`.
+
+### Backend self-monitoring
+
+"Sentinel should monitor itself before monitoring anything else."
+`GET /api/system` reports real process CPU%/memory% (`psutil`), uptime,
+live database/scheduler status, and exact registry counts — not
+estimates. `js/engine/backend-health.js` polls it independently of
+whichever `DataProvider` is active (useful even while fully simulated)
+and Settings' "Backend Health" widget renders it, showing an honest
+"Backend unreachable" state rather than stale data when there's nothing
+to poll.
 
 ## Known Limitations (honesty over polish)
 

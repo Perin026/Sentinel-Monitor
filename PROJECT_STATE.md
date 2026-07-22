@@ -8,7 +8,7 @@
 ## Where things stand
 
 **Current version:** `0.6.0-alpha` (unchanged — Phase 5.2 is still in progress; see `[Unreleased]` in `CHANGELOG.md`)
-**Last completed milestone:** Phase 5.2, Milestone 5.2.1 — API contract, real `ApiProvider`, Store integration
+**Last completed milestone:** Phase 5.2, Milestone 5.2.2 — Connection Manager, automatic fallback/reconnect, backend self-monitoring
 
 A note on numbering, now twice-relevant: the roadmap drafted after
 Phase 3.5 originally scoped its *next* phase as "Visualization Framework."
@@ -186,11 +186,37 @@ explicit goal) is for — implicit assumptions that held by construction
 under the only provider ever actually used, surfaced the moment a second
 one was.
 
+## Phase 5.2, Milestone 5.2.2 — what was built
+
+Verified live, not just reviewed: the backend process was killed
+mid-session — the frontend fell back to simulation automatically (22
+devices, `connection` → `"simulated"`). The backend was then restarted —
+the frontend reconnected automatically (3 real devices, `connection` →
+`"live"`, fresh latency measured). **Zero page reloads, either
+direction.** This is the exact scenario the brief's Step 6 describes,
+and it now genuinely works, not just structurally.
+
+What made it possible: `js/engine/connection-manager.js`, a heartbeat
+against `/health` that runs *only* while a fallback is active — the
+piece that was missing, since the failing `ApiProvider` gets stopped the
+moment fallback happens and nothing was left polling to notice a
+recovery. `engine.js` now tracks "preferred" vs. "currently active"
+provider separately so the internal fallback/recovery switches never
+overwrite what was actually asked for.
+
+Backend self-monitoring is real: `GET /api/system` now reports process
+CPU%/memory% (`psutil`), uptime, live database health, scheduler status,
+and exact plugin/collector/WebSocket-client counts — verified both via
+`curl` (real non-zero values while the server was up) and via the new
+`js/engine/backend-health.js`, which polls it **unconditionally**
+(regardless of which `DataProvider` is active) and Settings' new
+"Backend Health" widget renders. Settings' "Data Source" widget, which
+was frozen at whatever it showed at boot time, is now genuinely live
+too — provider, connection status, latency, and quality all update in
+real time.
+
 ## Known limitations (honesty over polish)
 
-- `ApiProvider` is opt-in, not the default — Milestone 5.2.2's automatic
-  simulation fallback needs to exist first, or a backend outage would
-  break the app for anyone defaulted to `"api"`.
 - The backend's `/api/dashboard` data is synthetic demo values, not a
   real collector — explicitly out of scope for this phase (see
   `docs/api-contract.md`).
@@ -213,10 +239,11 @@ one was.
 
 ## Immediate next
 
-**Milestone 5.2.2** (same phase): a Connection Manager (backend
-availability, latency, heartbeat, connection quality — richer than
-`ApiProvider`'s own per-poll retry), automatic simulation fallback when
-the backend goes away, automatic reconnect when it returns, and backend
-self-monitoring surfaced in the UI. Then **Milestone 5.2.3**: testing,
-full documentation pass, final architecture review. See `docs/roadmap.md`
-  buffers, independent of backend work.
+**Milestone 5.2.3** (same phase, final): testing (backend startup,
+frontend startup, REST communication, Store sync, connection loss,
+fallback, reconnect, plugin loading, API validation, error handling —
+much of this already verified live, this milestone is about codifying it
+as committed, repeatable tests), a full documentation pass, and a final
+architecture review (tight coupling, duplicate logic, leaking
+abstractions, performance, maintainability, scaling). See
+`docs/roadmap.md`.

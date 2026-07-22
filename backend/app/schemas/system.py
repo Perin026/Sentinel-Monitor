@@ -4,13 +4,27 @@ from pydantic import BaseModel
 
 
 class SystemInfoResponse(BaseModel):
-    """Placeholder system information — Phase 5.1 is architecture only, so
-    every field here is either static or trivially derivable, not the
-    result of a real collector (that's a later phase)."""
+    """
+    Self-monitoring — "Sentinel should monitor itself before monitoring
+    anything else" (Phase 5.2). cpu_percent/memory_percent/uptime_seconds
+    are real host/process metrics (via psutil); the rest are exact counts
+    from the actual registries and services, not estimates.
+
+    `collector_count` is always 0 right now — the collector registry
+    exists (`app/collectors/`) but Phase 5.2 explicitly ships no real
+    collectors. Reported honestly rather than omitted.
+    """
 
     app_name: str
     app_version: str
     environment: str
+
+    cpu_percent: float
+    memory_percent: float
+    uptime_seconds: float
+
+    database_healthy: bool
     scheduler_running: bool
-    active_websocket_connections: int
     plugins_loaded: int
+    collector_count: int
+    connected_websocket_clients: int

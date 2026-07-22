@@ -7,6 +7,8 @@
   "use strict";
 
   let currentProvider = null;
+  let currentProviderName = null;    // what's actually running right now
+  let preferredProviderName = null;  // what should run whenever it's reachable
   let consecutiveReconnects = 0;
   const FALLBACK_THRESHOLD = 3;
 
@@ -93,21 +95,55 @@
     });
   }
 
+  /**
+   * Phase 5.2 — on repeated failure, falls back to simulation automatically
+   * (unchanged from Phase 3) and now *also* starts a background heartbeat
+   * (js/engine/connection-manager.js) that's independent of the stopped
+   * ApiProvider, specifically so recovery can be noticed and switched back
+   * to automatically — without this, "reconnect when the backend returns"
+   * had nothing left running that could ever detect the return.
+   */
   function handleStatus(status){
     HLM.store.set({ connection: status });
     if(status === "reconnecting"){
       consecutiveReconnects += 1;
-      if(consecutiveReconnects >= FALLBACK_THRESHOLD && HLM.config.APP.dataProvider !== "simulation"){
-        HLM.ui.toast({ title: "Falling back to simulation", message: "The live data source is unreachable.", level: "warn" });
-        switchProvider("simulation");
+      if(consecutiveReconnects >= FALLBACK_THRESHOLD && currentProviderName !== "simulation"){
+        HLM.ui.toast({ title: "Falling back to simulation", message: "The live data source is unreachable. Sentinel will reconnect automatically.", level: "warn" });
+        switchProvider("simulation", { manual: false });
+        beginReconnectWatch();
       }
     } else {
       consecutiveReconnects = 0;
     }
   }
 
-  function switchProvider(name){
+  function beginReconnectWatch(){
+    if(preferredProviderName === "simulation" || preferredProviderName == null) return; // nothing to reconnect to
+    HLM.connectionManager.startHeartbeat(HLM.config.APP.dataUrl, {
+      intervalMs: HLM.config.APP.refreshMs,
+      onRecovered: () => {
+        HLM.ui.toast({ title: "Reconnected", message: "The live data source is reachable again.", level: "ok" });
+        switchProvider(preferredProviderName, { manual: false });
+      },
+    });
+  }
+
+  /**
+   * @param {string} name
+   * @param {object} [opts]
+   * @param {boolean} [opts.manual=true]  true for an explicit/user-driven
+   *   switch (updates what "preferred" means, cancels any pending
+   *   auto-reconnect); false for the internal fallback/recovery path,
+   *   which must never overwrite what the user actually asked for.
+   */
+  function switchProvider(name, { manual = true } = {}){
     currentProvider?.stop();
+    if(manual){
+      preferredProviderName = name;
+      HLM.connectionManager.stopHeartbeat();
+      consecutiveReconnects = 0;
+    }
+    currentProviderName = name;
     currentProvider = HLM.dataProvider.createProvider(name, {
       onTick: runPipeline,
       onStatus: handleStatus,
@@ -118,8 +154,10 @@
   }
 
   function start(){
-    switchProvider(HLM.config.APP.dataProvider);
+    preferredProviderName = HLM.config.APP.dataProvider;
+    switchProvider(HLM.config.APP.dataProvider, { manual: true });
     HLM.monitoringScheduler.start(); // independent of which DataProvider is active — see overlayLiveSensors()
+    HLM.backendHealth.start(HLM.config.APP.dataUrl); // also independent — "monitor itself" runs regardless of dataProvider
   }
 
   function refresh(){
