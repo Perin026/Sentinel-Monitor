@@ -196,7 +196,18 @@
     const uptimeCounter = HLM.ui.createCounter({ value: 0, size: "lg", suffix: "d", label: "—" });
     uptime.setContent(uptimeCounter.el);
 
-    grid.append(health.el, cpu.el, mem.el, storage.el, alerts.el, online.el, uptime.el);
+    // Phase 4.6 — a real historical chart. The per-sensor history buffers
+    // are per device; this is a fleet aggregate, so the widget keeps its
+    // own rolling buffer (same {t,v} shape via historyEngine.pushSample)
+    // of the average CPU it computes each tick. Clearly labeled as an
+    // average, not a single device's series.
+    const trend = HLM.ui.createWidget({ title: "Fleet CPU Trend", subtitle: "average load across compute devices", icon: "workflow", collapsible: false });
+    trend.el.classList.add("span-12");
+    const cpuChart = HLM.ui.createTimeChart({ min: 0, max: 100, unit: "%", warn: cpuDef.warn, critical: cpuDef.critical, label: "Average CPU %" });
+    trend.setContent(cpuChart.el);
+    let cpuTrendBuf = [];
+
+    grid.append(health.el, cpu.el, mem.el, storage.el, alerts.el, online.el, uptime.el, trend.el);
 
     function render(s){
       const devices = Object.values(s.devices);
@@ -213,6 +224,9 @@
       cpuGauge.update(cpuAvg);
       memGauge.update(ramAvg);
       storageGauge.update(storageAvg);
+
+      cpuTrendBuf = HLM.historyEngine.pushSample(cpuTrendBuf, cpuAvg, HLM.config.APP.historyPoints);
+      cpuChart.update(cpuTrendBuf);
       cpu.setStatus(HLM.healthEngine.computeSensorStatus(cpuAvg, cpuDef));
       mem.setStatus(HLM.healthEngine.computeSensorStatus(ramAvg, ramDef));
       storage.setStatus(HLM.healthEngine.computeSensorStatus(storageAvg, storageDef));

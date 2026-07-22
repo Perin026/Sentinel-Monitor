@@ -11,7 +11,42 @@ between minor versions, as permitted by SemVer.
 
 ## [Unreleased]
 
-### Phase 5.2 (in progress) — Frontend ↔ Backend Integration
+### Phase 4.6 (in progress) — Visualization Framework
+
+Hand-rolled SVG data visualization on top of the data the engine already
+produces — no charting library, no build step, no engine changes, same
+`{el, update}` component contract as `gauge.js`. (Phase 4.6 is the work
+originally scoped as "Phase 4," twice renumbered; it lands after Phase 5.2
+in commit order but keeps its lower number — see `PROJECT_STATE.md`.)
+
+**Milestone 4.6.1 — charting foundation + historical graphs.**
+
+- `js/components/chart.js` (new): two SVG chart primitives that consume
+  the one `{t,v}` history-buffer shape the whole app already produces
+  (`js/engine/history-engine.js`):
+  - `createSparkline()` — a tiny, axis-less inline trend; stretches to its
+    container via a fixed viewBox + `vector-effect: non-scaling-stroke`
+    (no width measurement / ResizeObserver needed), colored by the
+    sensor's own threshold status
+  - `createTimeChart()` — a full chart: y-axis gridlines + labels,
+    warn/critical threshold bands drawn behind the line, a live area-filled
+    line, and a hover crosshair with a floating value/time readout
+- `css/components/chart.css` (new): color-by-status and the fills, tokens
+  only (`--status-*`, `--accent-wash`), so it follows the theme; respects
+  `prefers-reduced-motion` via the shared duration tokens
+- `js/plugins/builtin/core-visualizations.js` (new): registers `sparkline`
+  and `time-chart` through the same widget registry every other widget
+  uses — a plugin can drop either into a panel
+- Wired to real data: every sensor row in a device card's expanded detail
+  now shows a sparkline of that sensor's history, and the Overview gained
+  a full-width "Fleet CPU Trend" time-chart (the widget keeps its own
+  rolling buffer of the fleet-average CPU it already computes each tick).
+- Verified live: charts draw real, growing paths from the history buffers,
+  animate on every tick, are status-colored (a line crossing into warn
+  changes color), scale cleanly from desktop (956px) to mobile (304px)
+  with zero horizontal overflow, and add no console errors.
+
+### Phase 5.2 — Frontend ↔ Backend Integration
 
 **Milestone 5.2.1 — API contract, ApiProvider, Store integration.**
 Architectural validation: the frontend now genuinely renders real backend

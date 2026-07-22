@@ -42,8 +42,16 @@
   function buildSensorRow(key, sensor){
     const label = el("span", { class: "sensor-label" }, [sensor.def.label]);
     const valueEl = el("span", { class: "sensor-value" }, [fmtValue(sensor)]);
-    const node = el("div", { class: `device-card-sensor status-${sensor.status}` }, [label, valueEl]);
-    return { node, valueEl };
+    // Phase 4.6 — inline trend of this sensor's own history buffer
+    // (js/engine/history-engine.js). Colored by the sensor's threshold
+    // thresholds so a rising-into-warn line changes color as it climbs.
+    const spark = HLM.ui.createSparkline({
+      history: sensor.history || [],
+      min: sensor.def.min, max: sensor.def.max,
+      warn: sensor.def.warn, critical: sensor.def.critical, invert: sensor.def.invert,
+    });
+    const node = el("div", { class: `device-card-sensor status-${sensor.status}` }, [label, valueEl, spark.el]);
+    return { node, valueEl, spark };
   }
 
   // ---------------------------------------------------------------
@@ -157,6 +165,7 @@
         if(!row) return;
         row.node.className = `device-card-sensor status-${sensor.status}`;
         row.valueEl.textContent = fmtValue(sensor);
+        if(row.spark) row.spark.update(sensor.history, sensor.status);
 
         const monitorRow = refs.monitors[key];
         if(monitorRow && sensor.def.monitor){

@@ -46,6 +46,7 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 - Plugin architecture: device types, widgets, commands, data providers, sensor providers, notification providers, settings panels, and background tasks are all pluggable
 - Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface — Minecraft's player-count/MOTD/version check is genuinely real, the rest remain architectural demonstrations
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
+- **Data visualization** (Phase 4.6, in progress): hand-rolled SVG charts — inline sparklines on every sensor and a live fleet-trend time-chart with threshold bands and a hover readout — with no charting library, drawing from the same timestamped history buffers the engine already maintains. Treemap, heatmap, status matrix, and an interactive topology map are the next milestones.
 - Zero build step — open `index.html` and it runs
 - **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. See [`backend/README.md`](backend/README.md)
 - **Frontend ↔ backend integration** (Phase 5.2, complete): `ApiProvider` genuinely fetches and renders real backend data through the *same* Store, health engine, and widgets the simulator uses, completely unmodified — still opt-in (`"simulation"` stays the default). If the backend goes away mid-session, the frontend automatically falls back to simulation and automatically reconnects once it's back, with zero page reload — verified live, not just built. Settings also now shows the backend's own health (CPU/memory/uptime/database/scheduler), because "Sentinel should monitor itself before monitoring anything else." See [`docs/api-contract.md`](docs/api-contract.md) and [how the two sides communicate](docs/architecture.md#how-the-frontend-and-backend-communicate)
@@ -169,7 +170,7 @@ Plugins can register device types, widgets, pages, commands, data providers, not
 | 3.5 | Plugin Architecture | ✅ Complete |
 | 4 | Real Monitoring Engine (sensor providers, scheduler, live polling) | ✅ Complete |
 | 4.5 | Full Visual QA & UI Stabilization | ✅ Complete |
-| 4.6 | Visualization Framework (charts, topology, treemap) | ⏳ Planned |
+| 4.6 | Visualization Framework (charts, topology, treemap) | 🔄 In progress |
 | 5.1 | Sentinel Core Server Foundation (`backend/`) | ✅ Complete |
 | 5.2 | Frontend ↔ Backend Integration (real `ApiProvider`, Connection Manager, fallback) | ✅ Complete |
 | 5.2+/6+ | Real collectors, authentication, history behind the backend | ⏳ Planned |

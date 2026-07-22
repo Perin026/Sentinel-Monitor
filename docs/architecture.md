@@ -244,6 +244,38 @@ about this:
   `mcsrvstat.us` API speaks the actual Minecraft protocol server-side, so
   the browser gets real online/player/MOTD/version data over plain HTTPS.
 
+## Visualization (Phase 4.6)
+
+The charting layer is deliberately a *rendering* layer, not a data layer:
+it adds no state, no polling, and no engine changes. Every chart consumes
+the one history-buffer shape the engine has produced since Phase 4
+(`{t,v}` samples, `js/engine/history-engine.js`) and follows the same
+component contract as `gauge.js` — a factory returning `{ el, update }`,
+where the component owns rendering and the caller owns the data and the
+update cadence. There is no charting library; the SVG is built with
+`createElementNS`, the same way the gauges are.
+
+Two primitives (`js/components/chart.js`), both registered through the
+existing widget registry (`js/plugins/builtin/core-visualizations.js`) so
+a plugin can use them exactly like a gauge:
+
+- `createSparkline()` — an inline, axis-less trend. Responsive without any
+  measurement code: a fixed logical viewBox stretched by the container,
+  with `vector-effect: non-scaling-stroke` keeping the line crisp at any
+  width. Colored by the sensor's own threshold status.
+- `createTimeChart()` — a full chart with gridlines, y-axis labels,
+  warn/critical threshold bands, an area-filled line, and a pointer
+  crosshair with a floating value/time readout.
+
+The split between "a device's own sensor history" and "a fleet aggregate"
+matters: per-sensor buffers live on the device objects in the Store, so a
+sparkline is handed `sensor.history` directly. A fleet-average series
+(the Overview's "Fleet CPU Trend") has no such buffer, so *that* widget
+keeps its own rolling buffer — using the same `historyEngine.pushSample`
+shape — of the average it computes each tick. A chart is never given
+authority over data it doesn't own; it either reads an existing buffer or
+maintains its own clearly-labeled aggregate.
+
 ## Sentinel Core Server (Phase 5.1)
 
 A backend now exists (`backend/`) — but it is not yet wired to anything

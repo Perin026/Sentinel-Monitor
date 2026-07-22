@@ -74,6 +74,25 @@ top-level global, ever, even for something that feels "internal."
   shape (`{t,v}` samples), shared by simulated and live sensors alike, so
   a future charting layer only needs to handle one format.
 
+## Visualization (Phase 4.6) — it's a rendering layer, keep it that way
+
+`js/components/chart.js` (`HLM.ui.createSparkline` / `createTimeChart`,
+registered as widgets in `js/plugins/builtin/core-visualizations.js`) is
+deliberately *rendering only* — same `{el, update}` contract as
+`gauge.js`, no state, no polling, no engine changes. A chart is handed a
+`{t,v}` buffer and draws it; it never fetches or aggregates. If you need a
+series that doesn't already exist as a per-sensor buffer (e.g. a fleet
+average), the *widget* keeps its own rolling buffer via
+`historyEngine.pushSample` and feeds the chart — don't push aggregation
+down into the chart, and don't add a new buffer shape (the whole point of
+history-engine's one format is that the chart layer only handles one).
+Responsive is handled by viewBox + `vector-effect: non-scaling-stroke`, no
+measurement code — don't reach for ResizeObserver. No charting library;
+build SVG with `createElementNS` like the gauges do. More viz kinds
+(treemap, heatmap, status matrix, topology) are coming in later 4.6
+milestones — one file per capability, all registered through the same
+widget registry.
+
 ## The two-flag opt-in for live monitoring (read this before adding a device)
 
 A sensor only actually gets polled if **both** are true:

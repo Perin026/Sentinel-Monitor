@@ -7,8 +7,8 @@
 
 ## Where things stand
 
-**Current version:** `0.6.0-alpha` (unchanged — Phase 5.2 is complete but is architectural validation, not a feature release; see `[Unreleased]` in `CHANGELOG.md`)
-**Last completed milestone:** Phase 5.2, Milestone 5.2.3 — testing, documentation, final architecture review (Phase 5.2 now complete)
+**Current version:** `0.6.0-alpha` (unchanged — Phase 4.6 adds visualization on existing data, not a new feature surface worth a version bump yet; see `[Unreleased]` in `CHANGELOG.md`)
+**Last completed milestone:** Phase 4.6, Milestone 4.6.1 — charting foundation (SVG sparklines + time-charts wired to the real history buffers). Phase 5.2 is complete; Phase 4.6 is now in progress.
 
 A note on numbering, now twice-relevant: the roadmap drafted after
 Phase 3.5 originally scoped its *next* phase as "Visualization Framework."
@@ -280,21 +280,47 @@ adapter, the provider, and the resilience layer.
   structurally-complete-but-inert, matching the backend's `/ws` endpoint
   which is transport-only (Phase 5.1). Not this phase's scope either.
 
+## Phase 4.6, Milestone 4.6.1 — what was built
+
+The charting foundation, and the first two things wired to it. Hand-rolled
+SVG, no charting library, no engine changes — pure rendering on the
+`{t,v}` history buffers the engine has produced since Phase 4.
+
+- `js/components/chart.js` (new): `createSparkline()` (inline, axis-less,
+  responsive via viewBox + `non-scaling-stroke`) and `createTimeChart()`
+  (gridlines, y-labels, warn/critical threshold bands, area-filled line,
+  hover crosshair + floating readout). Same `{el, update}` contract as
+  `gauge.js`; both handle 0/1-point buffers gracefully.
+- `css/components/chart.css` (new): color-by-status + fills, tokens only.
+- `js/plugins/builtin/core-visualizations.js` (new): registers `sparkline`
+  and `time-chart` through the same widget registry every widget uses.
+- Wired: a sparkline in every sensor row of a device card's expanded
+  detail (reads `sensor.history`), and a full-width "Fleet CPU Trend"
+  time-chart on the Overview (keeps its own rolling buffer of the average
+  it already computes each tick — a chart never gets authority over data
+  it doesn't own).
+
+Verified live (screenshots time out in this environment, so via measured
+DOM geometry + computed styles, same as Milestone 5.2.3): both chart kinds
+draw real, growing paths from the buffers; the time-chart's stroke is
+genuinely `--status-ok` green and carries warn bands + gridlines; a
+device-card sparkline renders 186×26 with the right token colors; the
+whole thing scales from 956px (desktop) to 304px (mobile) with zero
+horizontal page overflow; no console errors across nav + expand +
+resize.
+
 ## Immediate next
 
-Phase 5.2 is complete; there is no in-flight milestone. The next planned
-work (see `docs/roadmap.md`) is one of two independent tracks:
+Phase 4.6 continues (see `docs/roadmap.md`):
 
-- **Phase 4.6 — Visualization Framework**: charts, topology, treemap,
-  historical graphs backed by the timestamped history buffers the engine
-  already maintains. Pure UI/rendering on data that already exists; no
-  engine changes expected.
-- **Phase 5.2+/6 — real data behind the backend**: replace
-  `/api/dashboard`'s synthetic demo devices with real collectors
-  (Docker/Proxmox/etc.), and start filling the documented backend seams
-  (history storage, authentication). This is where "simulated by default"
-  finally has a real alternative to point at.
+- **Milestone 4.6.2 — fleet composition + status views**: a treemap of
+  fleet composition (by group/type), a status matrix (devices × status),
+  and a sensor heatmap, on a new "Analytics" nav page. Same hand-rolled
+  SVG approach; still no engine changes.
+- **Milestone 4.6.3 — interactive topology map**: a status-colored
+  network graph (nodes = devices, grouped by subnet/role) with hover and
+  zoom — the most layout-heavy single piece, hence its own milestone.
 
-Neither is started. The architecture is at a clean stopping point: the
-frontend↔backend path is proven and resilient, and both sides still run
-independently.
+Separately (independent track, not blocking 4.6): **real data behind the
+backend** (replace `/api/dashboard`'s synthetic demo devices with real
+collectors; fill the documented backend seams — history storage, auth).

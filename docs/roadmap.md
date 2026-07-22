@@ -64,15 +64,23 @@ real browser, not by inspection alone.
 
 ## Upcoming
 
-### Phase 4.6 — Visualization Framework
+### 🔄 Phase 4.6 — Visualization Framework (in progress)
 Charts, interactive topology map, treemap/sunburst for fleet composition,
 historical graphs backed by the sensor history buffers the engine already
 maintains (now timestamped — see `js/engine/history-engine.js`), heatmaps,
 and a status matrix. This phase is UI/rendering work on top of data the
-engine already produces — no engine changes expected. (This is the
-work originally scoped as "Phase 4," twice renumbered — first when the
-Real Monitoring Engine brief took the "Phase 4" slot, then again when
-Visual QA took the "Phase 4.5" slot — see `PROJECT_STATE.md`.)
+engine already produces — no engine changes expected. All hand-rolled
+SVG, no charting library, same zero-build ethos as the rest of the repo.
+(This is the work originally scoped as "Phase 4," twice renumbered — first
+when the Real Monitoring Engine brief took the "Phase 4" slot, then again
+when Visual QA took the "Phase 4.5" slot — see `PROJECT_STATE.md`.)
+
+- Milestone 4.6.1 (charting foundation — `createSparkline` +
+  `createTimeChart`, registered as widgets, wired to real history buffers:
+  sparklines in device cards, a fleet CPU trend chart on the Overview) ✅
+- Milestone 4.6.2 (fleet composition + status views — treemap, status
+  matrix, sensor heatmap, on a new Analytics page) — planned
+- Milestone 4.6.3 (interactive topology map) — planned
 
 ### Phase 5 — Backend
 A real backend implementing the `/api/dashboard` contract `ApiProvider`
