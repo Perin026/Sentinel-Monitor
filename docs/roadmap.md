@@ -78,9 +78,10 @@ when Visual QA took the "Phase 4.5" slot — see `PROJECT_STATE.md`.)
 - Milestone 4.6.1 (charting foundation — `createSparkline` +
   `createTimeChart`, registered as widgets, wired to real history buffers:
   sparklines in device cards, a fleet CPU trend chart on the Overview) ✅
-- Milestone 4.6.2 (fleet composition + status views — treemap, status
-  matrix, sensor heatmap, on a new Analytics page) — planned
-- Milestone 4.6.3 (interactive topology map) — planned
+- Milestone 4.6.2 (fleet composition + status views — a squarified
+  treemap, a status matrix, and a sensor heatmap, on a new Analytics
+  page) ✅
+- Milestone 4.6.3 (interactive topology map) — remaining
 
 ### Phase 5 — Backend
 A real backend implementing the `/api/dashboard` contract `ApiProvider`

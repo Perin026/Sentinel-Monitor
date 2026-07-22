@@ -29,6 +29,10 @@
       section: "Monitoring",
       items: [
         { id: "overview",       label: "Overview",       icon: "grid" },
+        // Fleet-wide visual analysis (Phase 4.6). Not a device *group*
+        // view — see mountViews() in js/app.js, which excludes it from
+        // the group-view list for exactly that reason.
+        { id: "analytics",      label: "Analytics",      icon: "layers" },
         { id: "infrastructure", label: "Infrastructure", icon: "topology" },
         { id: "servers",        label: "Servers",        icon: "server" },
         { id: "network",        label: "Network",        icon: "network" },

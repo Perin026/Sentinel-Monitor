@@ -88,10 +88,28 @@ down into the chart, and don't add a new buffer shape (the whole point of
 history-engine's one format is that the chart layer only handles one).
 Responsive is handled by viewBox + `vector-effect: non-scaling-stroke`, no
 measurement code — don't reach for ResizeObserver. No charting library;
-build SVG with `createElementNS` like the gauges do. More viz kinds
-(treemap, heatmap, status matrix, topology) are coming in later 4.6
-milestones — one file per capability, all registered through the same
-widget registry.
+build SVG with `createElementNS` like the gauges do.
+
+Three more viz components landed in 4.6.2 (`treemap.js`, and `matrix.js`'s
+status matrix + heatmap), with two conventions worth keeping:
+
+- **SVG vs. HTML is a per-component decision, not a rule.** Charts and the
+  treemap are SVG because they need real geometry (path projection, area
+  partitioning). The status matrix and heatmap are HTML CSS-grid because
+  they're labeled tables of cells, where grid gives text alignment and
+  native accessibility for free. Match the markup to the data's shape;
+  each file header states its choice. Don't "unify" these onto SVG.
+- **Separate layout from paint.** Each component holds a signature of what
+  it's drawing (device ids / groups / implied columns) and only recomputes
+  layout when *that* changes — an ordinary tick just repaints cells. If
+  you add a viz that relayouts every tick, you've regressed the thing
+  `device-card.js` established for a 500-device fleet.
+
+One wiring trap, already paid for once: a new non-device view must be
+added to the exclusion list in `mountViews()` (`js/app.js`) alongside
+`overview`/`logs`/`settings`, or `mountDeviceGroupView()` will treat it as
+a device category and render it permanently empty. `analytics` is in that
+list; the next such view needs to be too.
 
 ## The two-flag opt-in for live monitoring (read this before adding a device)
 

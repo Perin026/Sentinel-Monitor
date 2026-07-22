@@ -24,6 +24,9 @@
     setup(ctx){
       ctx.registerWidget("sparkline", () => HLM.ui.createSparkline);
       ctx.registerWidget("time-chart", () => HLM.ui.createTimeChart);
+      ctx.registerWidget("treemap", () => HLM.ui.createTreemap);
+      ctx.registerWidget("status-matrix", () => HLM.ui.createStatusMatrix);
+      ctx.registerWidget("heatmap", () => HLM.ui.createHeatmap);
     },
   });
 })(window.HLM = window.HLM || {});

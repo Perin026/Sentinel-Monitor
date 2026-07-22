@@ -1,0 +1,149 @@
+/* =====================================================================
+   MATRIX — status matrix + sensor heatmap, built by matrix.js.
+   Both are CSS-grid cell tables (see matrix.js's header for why these
+   are HTML rather than SVG).
+   ===================================================================== */
+
+/* ---------- Status matrix ---------- */
+.status-matrix{
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.status-matrix-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18px, 1fr));
+  gap: 4px;
+}
+.status-matrix-cell{
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--status-offline);
+  cursor: default;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.status-matrix-cell:hover,
+.status-matrix-cell:focus-visible{
+  transform: scale(1.18);
+  box-shadow: var(--shadow-md);
+  outline: none;
+  z-index: 1;
+}
+.status-matrix-cell.status-ok{ background: var(--status-ok); }
+.status-matrix-cell.status-warn{ background: var(--status-warn); }
+.status-matrix-cell.status-critical{ background: var(--status-critical); }
+.status-matrix-cell.status-offline{ background: var(--status-offline); }
+.status-matrix-cell.status-paused{ background: var(--accent-dim); }
+.status-matrix-cell.status-unknown{ background: var(--border-strong); }
+
+.status-matrix-legend{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+}
+.status-matrix-legend-item{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-matrix-swatch{
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  background: var(--status-offline);
+}
+.status-matrix-swatch.status-ok{ background: var(--status-ok); }
+.status-matrix-swatch.status-warn{ background: var(--status-warn); }
+.status-matrix-swatch.status-critical{ background: var(--status-critical); }
+.status-matrix-swatch.status-offline{ background: var(--status-offline); }
+.status-matrix-swatch.status-paused{ background: var(--accent-dim); }
+.status-matrix-swatch.status-unknown{ background: var(--border-strong); }
+
+.status-matrix-empty,
+.heatmap-empty{
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+.status-matrix.is-empty .status-matrix-grid,
+.status-matrix.is-empty .status-matrix-legend{ display: none; }
+.status-matrix.is-empty .status-matrix-empty{ display: flex; }
+
+/* ---------- Sensor heatmap ---------- */
+.heatmap{
+  width: 100%;
+  /* A wide fleet shouldn't push the page sideways — scroll inside. */
+  overflow-x: auto;
+}
+.heatmap-table{
+  display: grid;
+  gap: 3px;
+  min-width: 320px;
+}
+.heatmap-corner{ /* empty top-left cell */ }
+.heatmap-col-head,
+.heatmap-row-head{
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.heatmap-col-head{
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-weight: 600;
+}
+.heatmap-row-head{
+  padding-right: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.heatmap-cell{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  cursor: default;
+  isolation: isolate;
+}
+/* The heat itself: the status color, alpha-scaled by how far the value
+   sits through its own range (--heat, set per-cell by matrix.js). Kept
+   as a separate painted layer so the number on top stays legible. */
+.heatmap-cell::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--heat-color, var(--accent));
+  opacity: calc(.12 + var(--heat, 0) * .78);
+  z-index: -1;
+  transition: opacity var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out);
+}
+.heatmap-cell.status-ok{ --heat-color: var(--status-ok); }
+.heatmap-cell.status-warn{ --heat-color: var(--status-warn); }
+.heatmap-cell.status-critical{ --heat-color: var(--status-critical); }
+.heatmap-cell.status-offline{ --heat-color: var(--status-offline); }
+.heatmap-cell.status-paused{ --heat-color: var(--accent-dim); }
+.heatmap-cell.is-missing{
+  background: transparent;
+  color: var(--text-disabled);
+}
+.heatmap-cell.is-missing::before{ opacity: 0; }
+
+.heatmap.is-empty .heatmap-table{ display: none; }
+.heatmap.is-empty .heatmap-empty{ display: flex; }

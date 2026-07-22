@@ -46,6 +46,49 @@ in commit order but keeps its lower number — see `PROJECT_STATE.md`.)
   changes color), scale cleanly from desktop (956px) to mobile (304px)
   with zero horizontal overflow, and add no console errors.
 
+**Milestone 4.6.2 — fleet composition + status views, on a new Analytics
+page.** Three fleet-wide visualizations, plus the first new nav view since
+Phase 1.
+
+- `js/components/treemap.js` (new): a **two-level squarified treemap** of
+  fleet composition — one rectangle per device group (area ∝ device
+  count), subdivided into one status-colored cell per device. Squarified
+  (Bruls/Huizing/van Wijk) rather than slice-and-dice, which degenerates
+  into unreadable slivers exactly when one group dominates — the shape a
+  real homelab actually has. Verified: 0 degenerate rects, worst aspect
+  ratio 1.94.
+- `js/components/matrix.js` (new): `createStatusMatrix()` (one cell per
+  device, dense "whole fleet at a glance" grid with a counted legend) and
+  `createHeatmap()` (devices × sensor keys, each cell's intensity scaled
+  by where that sensor sits in its own range). Both are HTML/CSS grid
+  rather than SVG — unlike the treemap and charts they're *labeled tables
+  of cells*, where CSS grid gives correct text alignment and native
+  accessibility for free; the rationale is documented in the file.
+- New **Analytics** view (`analytics` in `NAV`, a `<section data-view>`,
+  and `mountAnalytics()`), carrying all three panels. It is explicitly
+  excluded from `mountViews()`'s device-group list — it's a fleet-wide
+  visual view, not a device category, and would otherwise have been
+  rendered as a permanently-empty group.
+- All three registered as widgets (`treemap`, `status-matrix`, `heatmap`)
+  through the same registry, alongside 4.6.1's `sparkline`/`time-chart`.
+- Readability, from looking at real output rather than guessing: the
+  heatmap defaults to the **4** broadly-shared sensors (the fleet's key
+  frequency falls off a cliff after cpu/ram/storage/temp, so extra columns
+  were mostly empty — density went 41% → 55%), and rows are sorted by how
+  many of those sensors they actually have, so the dense block reads first
+  and the genuinely-sparse tail (a switch has no disk, a UPS no CPU) is
+  visibly the tail rather than interleaved.
+- Perf: all three compute layout only when *composition* changes (a
+  signature of device ids / groups / columns) and otherwise patch cells in
+  place — verified by holding node references across several ticks and
+  confirming the same DOM nodes were recolored, not recreated. Same
+  "patch, don't rebuild" discipline as `device-card.js`.
+- Verified live: 7 groups / 22 treemap cells / 22 matrix cells / 88 heat
+  cells against a 22-device fleet; scales to mobile with the heatmap
+  scrolling *inside its own container* and zero page-level horizontal
+  overflow (the Phase 4.5 rule); no console errors; no regression to the
+  existing views (all 22 device cards still distributed correctly).
+
 ### Phase 5.2 — Frontend ↔ Backend Integration
 
 **Milestone 5.2.1 — API contract, ApiProvider, Store integration.**

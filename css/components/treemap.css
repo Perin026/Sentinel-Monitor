@@ -1,0 +1,57 @@
+/* =====================================================================
+   TREEMAP — fleet composition, built by treemap.js. CSS owns
+   color-by-status and hover affordance; all geometry is computed in JS
+   (squarified layout) and set as SVG attributes.
+   ===================================================================== */
+
+.treemap{
+  position: relative;
+  width: 100%;
+}
+.treemap-svg{
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.treemap-group-bg{
+  fill: var(--bg-surface);
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.treemap-group-label{
+  fill: var(--text-tertiary);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.treemap-cell{
+  fill: var(--status-offline);
+  stroke: var(--bg-canvas);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: fill var(--duration-base) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+  cursor: default;
+}
+.treemap-cell:hover{ opacity: .78; }
+.treemap-cell.status-ok{ fill: var(--status-ok); }
+.treemap-cell.status-warn{ fill: var(--status-warn); }
+.treemap-cell.status-critical{ fill: var(--status-critical); }
+.treemap-cell.status-offline{ fill: var(--status-offline); }
+.treemap-cell.status-paused{ fill: var(--accent-dim); }
+.treemap-cell.status-unknown{ fill: var(--border-strong); }
+
+.treemap-empty{
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+.treemap.is-empty .treemap-svg{ display: none; }
+.treemap.is-empty .treemap-empty{ display: flex; }

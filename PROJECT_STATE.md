@@ -8,7 +8,7 @@
 ## Where things stand
 
 **Current version:** `0.6.0-alpha` (unchanged — Phase 4.6 adds visualization on existing data, not a new feature surface worth a version bump yet; see `[Unreleased]` in `CHANGELOG.md`)
-**Last completed milestone:** Phase 4.6, Milestone 4.6.1 — charting foundation (SVG sparklines + time-charts wired to the real history buffers). Phase 5.2 is complete; Phase 4.6 is now in progress.
+**Last completed milestone:** Phase 4.6, Milestone 4.6.2 — fleet composition + status views (squarified treemap, status matrix, sensor heatmap) on a new Analytics page. Phase 5.2 is complete; Phase 4.6 is in progress (4.6.3, the topology map, remains).
 
 A note on numbering, now twice-relevant: the roadmap drafted after
 Phase 3.5 originally scoped its *next* phase as "Visualization Framework."
@@ -309,14 +309,49 @@ whole thing scales from 956px (desktop) to 304px (mobile) with zero
 horizontal page overflow; no console errors across nav + expand +
 resize.
 
+## Phase 4.6, Milestone 4.6.2 — what was built
+
+Three fleet-wide visualizations and the first new nav view since Phase 1.
+
+- `js/components/treemap.js` (new): two-level **squarified** treemap —
+  group rectangles sized by device count, subdivided into status-colored
+  device cells. Squarified specifically because slice-and-dice
+  degenerates into slivers when one group dominates, which is what a real
+  homelab looks like. Measured on the live fleet: 0 degenerate rects,
+  worst aspect ratio 1.94, ~87% area fill (rest is headers/gutters).
+- `js/components/matrix.js` (new): `createStatusMatrix()` and
+  `createHeatmap()`, both HTML CSS-grid rather than SVG — they're labeled
+  tables of cells, and grid gives text alignment + native accessibility
+  for free. The reasoning is in the file header; see also
+  `docs/architecture.md`'s "SVG or HTML?" note.
+- New **Analytics** view. The one non-obvious wiring detail: it had to be
+  excluded from `mountViews()`'s device-group list, or
+  `mountDeviceGroupView()` would have rendered it as a permanently-empty
+  device category (it's a fleet-wide view, not a group).
+
+Two readability decisions made by *looking at real output*, not by
+guessing: the heatmap shows the 4 broadly-shared sensors rather than 6
+(the fleet's sensor-key frequency is cpu 19, ram 16, storage 8, temp 5,
+then a cliff to 3 — the extra columns were mostly empty; density went
+41% → 55%), and rows are sorted by how many of those sensors a device
+actually has, so the dense block reads first and the genuinely sparse
+tail (a switch has no disk, a UPS no CPU) is visibly the tail.
+
+All three separate layout from paint: they recompute layout only when a
+composition signature changes and otherwise repaint cells in place —
+verified by holding DOM node references across several ticks and
+confirming the *same* nodes were recolored, not recreated.
+
+Verified live: 7 groups / 22 treemap cells / 22 matrix cells / 88 heat
+cells against the 22-device fleet; mobile (375px) scales cleanly with the
+heatmap scrolling inside its own container and zero page-level horizontal
+overflow (the Phase 4.5 rule); no console errors; no regression — all 22
+device cards still distributed correctly across the group views.
+
 ## Immediate next
 
 Phase 4.6 continues (see `docs/roadmap.md`):
 
-- **Milestone 4.6.2 — fleet composition + status views**: a treemap of
-  fleet composition (by group/type), a status matrix (devices × status),
-  and a sensor heatmap, on a new "Analytics" nav page. Same hand-rolled
-  SVG approach; still no engine changes.
 - **Milestone 4.6.3 — interactive topology map**: a status-colored
   network graph (nodes = devices, grouped by subnet/role) with hover and
   zoom — the most layout-heavy single piece, hence its own milestone.

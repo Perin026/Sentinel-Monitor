@@ -276,6 +276,40 @@ shape — of the average it computes each tick. A chart is never given
 authority over data it doesn't own; it either reads an existing buffer or
 maintains its own clearly-labeled aggregate.
 
+Three fleet-wide visualizations follow (Milestone 4.6.2), on a dedicated
+**Analytics** view:
+
+- `treemap.js` — a two-level **squarified** treemap of fleet composition
+  (group rectangles sized by device count, subdivided into status-colored
+  device cells). Squarified rather than slice-and-dice specifically
+  because slice-and-dice collapses into slivers when one group dominates,
+  which is what a real homelab looks like.
+- `matrix.js` — `createStatusMatrix()` (one cell per device) and
+  `createHeatmap()` (devices × sensor keys, intensity by where the value
+  sits in its own range).
+
+### SVG or HTML? Pick what fits the data's shape
+
+Charts and the treemap are SVG because they need real geometry — path
+projection, area partitioning. The status matrix and heatmap are **HTML
+CSS-grid**, because they are labeled tables of cells, where grid gives
+correct text alignment, ellipsis, and native accessibility (a real
+`title`, focusable cells) for free. Being dogmatic about "visualizations
+are SVG" would have meant hand-positioning every row label. The rule is
+to match the markup to the shape of the data, and each file's header says
+which it chose and why.
+
+### Composition changes rarely; values change constantly
+
+Every one of these visual components separates *layout* from *paint*.
+Each keeps a signature of what it's drawing — device ids, groups, and (for
+the heatmap) which sensor columns those imply — and only recomputes
+layout when that signature changes. An ordinary tick, where nothing but
+the numbers moved, just repaints existing cells. This is the same
+"patch, don't rebuild" discipline `device-card.js` established for a
+500-device fleet, applied to layout algorithms that are markedly more
+expensive than setting a `textContent`.
+
 ## Sentinel Core Server (Phase 5.1)
 
 A backend now exists (`backend/`) — but it is not yet wired to anything

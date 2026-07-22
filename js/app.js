@@ -563,11 +563,57 @@
   // Boot
   // ---------------------------------------------------------------
 
+  // ---------------------------------------------------------------
+  // Phase 4.6 — Analytics: fleet-wide visual analysis. Every panel here
+  // reads the same live store the rest of the app does; none of them
+  // fetch, aggregate on a schedule, or hold state beyond what they
+  // render. Subscribed on `lastTick` like every other live view.
+  // ---------------------------------------------------------------
+
+  function mountAnalytics(grid){
+    // `status` must be set at creation or no badge element is ever made
+    // (see widget.js) — setStatus() on a badge-less widget is a no-op.
+    const composition = HLM.ui.createWidget({ title: "Fleet Composition", subtitle: "grouped by category, sized by device count", icon: "layers", status: "ok", collapsible: false });
+    composition.el.classList.add("span-8");
+    const treemap = HLM.ui.createTreemap({ devices: [] });
+    composition.setContent(treemap.el);
+
+    const distribution = HLM.ui.createWidget({ title: "Status Distribution", subtitle: "one cell per device", icon: "grid", collapsible: false });
+    distribution.el.classList.add("span-4");
+    const matrix = HLM.ui.createStatusMatrix({ devices: [] });
+    distribution.setContent(matrix.el);
+
+    const pressure = HLM.ui.createWidget({ title: "Sensor Pressure", subtitle: "how hard each device is working, by sensor", icon: "cpu", collapsible: false });
+    pressure.el.classList.add("span-12");
+    const heatmap = HLM.ui.createHeatmap({ devices: [], maxColumns: 4 });
+    pressure.setContent(heatmap.el);
+
+    grid.append(composition.el, distribution.el, pressure.el);
+
+    function render(s){
+      const devices = Object.values(s.devices);
+      treemap.update(devices);
+      matrix.update(devices);
+      heatmap.update(devices);
+      composition.setStatus(s.systemHealth?.status === "ok" ? "ok" : s.systemHealth?.status === "critical" ? "critical" : "warn");
+    }
+
+    HLM.store.subscribe(render, s => s.lastTick);
+    render(HLM.store.get());
+  }
+
   function mountViews(){
     const overviewGrid = qs('.view[data-view="overview"] .widget-grid');
     if(overviewGrid) mountOverview(overviewGrid);
 
-    const groupViews = HLM.config.NAV.flatMap(g => g.items.map(i => i.id)).filter(id => !["overview", "logs", "settings"].includes(id));
+    const analyticsGrid = qs('.view[data-view="analytics"] .widget-grid');
+    if(analyticsGrid) mountAnalytics(analyticsGrid);
+
+    // "analytics" is a fleet-wide visual view, not a device *group* —
+    // it has no corresponding device group in the registries, so it must
+    // stay out of the group-view list or mountDeviceGroupView would
+    // render it as a permanently-empty category.
+    const groupViews = HLM.config.NAV.flatMap(g => g.items.map(i => i.id)).filter(id => !["overview", "analytics", "logs", "settings"].includes(id));
     groupViews.forEach(viewId => {
       const grid = qs(`.view[data-view="${viewId}"] .widget-grid`);
       if(grid) mountDeviceGroupView(viewId, grid);

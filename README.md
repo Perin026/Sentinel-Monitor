@@ -39,14 +39,14 @@ Most homelab dashboards are either too simple (a static status page) or too heav
 ## Features
 
 **Today (v0.6.0-alpha):**
-- NOC-style dashboard: overview, per-category device views, live event log, settings
+- NOC-style dashboard: overview, fleet analytics, per-category device views, live event log, settings
 - Realistic simulated telemetry — trends, spikes, incidents, and automatic recovery, not just random noise
 - Full health/alert/event engine: weighted device health, alert lifecycle (create → escalate → resolve), live event stream
 - **Real, opt-in live monitoring**: a Sensor Provider registry, a per-sensor Monitoring Scheduler (independent intervals, retries, backoff), and timestamped history — see two devices polling real infrastructure right now (a public Minecraft server and a public HTTP/reachability check) in Settings → Live Monitoring
 - Plugin architecture: device types, widgets, commands, data providers, sensor providers, notification providers, settings panels, and background tasks are all pluggable
 - Six example plugins (Proxmox, Docker, Minecraft, Ollama, Home Assistant, Pi-hole) proving the extension surface — Minecraft's player-count/MOTD/version check is genuinely real, the rest remain architectural demonstrations
 - Dark-mode-first, responsive, accessible component library (modals, toasts, menus, gauges, device cards) built from scratch — no UI framework dependency
-- **Data visualization** (Phase 4.6, in progress): hand-rolled SVG charts — inline sparklines on every sensor and a live fleet-trend time-chart with threshold bands and a hover readout — with no charting library, drawing from the same timestamped history buffers the engine already maintains. Treemap, heatmap, status matrix, and an interactive topology map are the next milestones.
+- **Data visualization** (Phase 4.6, in progress): hand-rolled charts with no charting library — inline sparklines on every sensor and a live fleet-trend time-chart (threshold bands, hover readout) drawing from the same timestamped history buffers the engine already maintains, plus a dedicated **Analytics** view with a squarified treemap of fleet composition, a status matrix, and a sensor heatmap. An interactive topology map is the remaining milestone.
 - Zero build step — open `index.html` and it runs
 - **Sentinel Core Server** (`backend/`): a FastAPI backend foundation — app factory, config system, async database layer with migrations, a plugin architecture mirroring the frontend's, WebSocket transport, and a job scheduler. See [`backend/README.md`](backend/README.md)
 - **Frontend ↔ backend integration** (Phase 5.2, complete): `ApiProvider` genuinely fetches and renders real backend data through the *same* Store, health engine, and widgets the simulator uses, completely unmodified — still opt-in (`"simulation"` stays the default). If the backend goes away mid-session, the frontend automatically falls back to simulation and automatically reconnects once it's back, with zero page reload — verified live, not just built. Settings also now shows the backend's own health (CPU/memory/uptime/database/scheduler), because "Sentinel should monitor itself before monitoring anything else." See [`docs/api-contract.md`](docs/api-contract.md) and [how the two sides communicate](docs/architecture.md#how-the-frontend-and-backend-communicate)
